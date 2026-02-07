@@ -1,12 +1,11 @@
 import React from "react";
 import UploadForm from "../components/UploadForm";
-import exp from "constants";
 
-const Upload = () =>{
-    return(
-        <div>
+const Upload = () => {
+    return (
+        <div style={{ padding: '20px' }}>
             <h3>Upload Payroll CSV</h3>
-            <UploadForm/>
+            <UploadForm />
         </div>
     );
 };
