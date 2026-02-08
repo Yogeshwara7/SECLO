@@ -5,6 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #FAF3E1;
+  color: #222222;
 }
 
 code {
@@ -14,4 +16,13 @@ code {
 
 * {
   box-sizing: border-box;
+}
+
+/* Color theme variables */
+:root {
+  --primary-bg: #FAF3E1;
+  --secondary-bg: #F5E7C6;
+  --accent-color: #FA8112;
+  --text-dark: #222222;
+  --text-light: #FAF3E1;
 }

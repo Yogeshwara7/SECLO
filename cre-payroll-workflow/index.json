@@ -1,0 +1,13 @@
+{
+  "batchId": "batch_123",
+  "records": [
+    {
+      "employeeId": "emp_001",
+      "amount": 5000
+    },
+    {
+      "employeeId": "emp_002",
+      "amount": 6000
+    }
+  ]
+}

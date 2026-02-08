@@ -42,25 +42,44 @@ const UploadForm = () => {
     };
 
     return (
-        <div style={{ padding: '20px', maxWidth: '500px' }}>
+        <div style={{ 
+            padding: '30px', 
+            maxWidth: '500px',
+            backgroundColor: '#F5E7C6',
+            borderRadius: '12px',
+            border: '2px solid #FA8112'
+        }}>
             <div style={{ marginBottom: '20px' }}>
                 <input
                     type="file"
                     accept=".csv,.xlsx,.xls"
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    style={{ marginBottom: '10px', display: 'block' }}
+                    style={{ 
+                        marginBottom: '15px', 
+                        display: 'block',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: '2px solid #222222',
+                        backgroundColor: '#FAF3E1',
+                        color: '#222222',
+                        width: '100%'
+                    }}
                 />
                 
                 <button 
                     onClick={handleUpload}
                     disabled={!file || isUploading}
                     style={{
-                        padding: '10px 20px',
-                        backgroundColor: !file || isUploading ? '#ccc' : '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: !file || isUploading ? 'not-allowed' : 'pointer'
+                        padding: '12px 24px',
+                        backgroundColor: !file || isUploading ? '#F5E7C6' : '#FA8112',
+                        color: !file || isUploading ? '#222222' : '#FAF3E1',
+                        border: '2px solid #222222',
+                        borderRadius: '8px',
+                        cursor: !file || isUploading ? 'not-allowed' : 'pointer',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        width: '100%',
+                        transition: 'all 0.2s ease'
                     }}
                 >
                     {isUploading ? 'Uploading...' : 'Upload Payroll'}
@@ -73,12 +92,16 @@ const UploadForm = () => {
                         onClick={handleStartWorkflow}
                         disabled={isStartingWorkflow}
                         style={{
-                            padding: '10px 20px',
-                            backgroundColor: isStartingWorkflow ? '#ccc' : '#28a745',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: isStartingWorkflow ? 'not-allowed' : 'pointer'
+                            padding: '12px 24px',
+                            backgroundColor: isStartingWorkflow ? '#F5E7C6' : '#222222',
+                            color: isStartingWorkflow ? '#222222' : '#FAF3E1',
+                            border: '2px solid #FA8112',
+                            borderRadius: '8px',
+                            cursor: isStartingWorkflow ? 'not-allowed' : 'pointer',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            width: '100%',
+                            transition: 'all 0.2s ease'
                         }}
                     >
                         {isStartingWorkflow ? 'Starting...' : 'Start Workflow'}
@@ -88,11 +111,14 @@ const UploadForm = () => {
 
             {message && (
                 <p style={{ 
-                    padding: '10px', 
-                    backgroundColor: message.includes('failed') ? '#f8d7da' : '#d4edda',
-                    color: message.includes('failed') ? '#721c24' : '#155724',
-                    border: `1px solid ${message.includes('failed') ? '#f5c6cb' : '#c3e6cb'}`,
-                    borderRadius: '4px'
+                    padding: '15px', 
+                    backgroundColor: message.includes('failed') ? '#222222' : '#FA8112',
+                    color: message.includes('failed') ? '#FAF3E1' : '#FAF3E1',
+                    border: `2px solid ${message.includes('failed') ? '#FA8112' : '#222222'}`,
+                    borderRadius: '8px',
+                    margin: 0,
+                    fontSize: '14px',
+                    fontWeight: 'bold'
                 }}>
                     {message}
                 </p>
