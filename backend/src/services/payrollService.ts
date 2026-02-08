@@ -29,19 +29,31 @@ export function updateStatus(id: string, status: PayrollBatch["status"]) {
     batches[id].status = status;
     return true;
 }
+
 export async function processPrivatePayout(batchId: string) {
-    const batch = getBatch(batchId);
-  
-    if (!batch) throw new Error("Batch not found");
-  
-    updateStatus(batchId, "processing");
-  
-    const creResult = await runCREWorkflow(batch);
-  
-    updateStatus(batchId, "processed");
-  
-    return {
-      creResult,
-      proof: "mock-proof"
-    };
+  const batch = getBatch(batchId);
+
+  if (!batch) {
+    throw new Error("Batch not found");
   }
+
+  updateStatus(batchId, "processing");
+
+  // Transform batch data to match CRE workflow expected format
+  const workflowPayload = {
+    batchId: batch.id,
+    records: batch.records.map(record => ({
+      employeeId: record.wallet,  // Map wallet to employeeId
+      amount: record.amount
+    }))
+  };
+
+  const creResult = await runCREWorkflow(workflowPayload);
+
+  updateStatus(batchId, "processed");
+
+  return {
+    creResult
+  };
+}
+

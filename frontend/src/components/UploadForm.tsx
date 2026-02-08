@@ -16,11 +16,14 @@ const UploadForm = () => {
         formData.append("file", file);
 
         try {
+            console.log("Uploading file...");
             const res = await api.post("/payroll/upload", formData);
+            console.log("Upload response:", res.data);
             setBatchId(res.data.batchId);
             setMessage(`Uploaded! Batch ID: ${res.data.batchId}`);
         } catch (err) {
-            setMessage("Upload failed");
+            console.error("Upload error:", err);
+            setMessage(`Upload failed: ${err}`);
             setBatchId(null);
         } finally {
             setIsUploading(false);
@@ -32,10 +35,13 @@ const UploadForm = () => {
 
         setIsStartingWorkflow(true);
         try {
+            console.log("Starting workflow for batchId:", batchId);
             const res = await api.post("/payroll/start", { batchId });
-            setMessage(`Workflow started! Status: ${res.data.status || 'Processing'}`);
-        } catch (err) {
-            setMessage("Failed to start workflow");
+            console.log("Workflow response:", res.data);
+            setMessage(`Workflow completed! Result: ${JSON.stringify(res.data)}`);
+        } catch (err: any) {
+            console.error("Workflow error:", err);
+            setMessage(`Failed to start workflow: ${err.response?.data?.message || err.message}`);
         } finally {
             setIsStartingWorkflow(false);
         }

@@ -28,19 +28,31 @@ router.post("/upload", upload.single("file"), (req, res) => {
   }
 });
 
-router.post("/start",async(req, res) => {
+router.post("/start", async (req, res) => {
   const { batchId } = req.body;
-  try{
-    updateStatus(batchId, "processing")
-    const result= await processPrivatePayout(batchId);
+
+  console.log("Start endpoint hit with batchId:", batchId);
+
+  try {
+    const result = await processPrivatePayout(batchId);
+
+    console.log("CRE execution finished:", result);
+
     res.json({
-        message:"Private payout simulated",
-        ...result,
+      message: "CRE Workflow executed successfully",
+      ...result
     });
-  }catch(err){
-    res.status(500).json({message:"Processing failed"})
+
+  } catch (err) {
+    console.error("CRE execution error:", err);
+
+    res.status(500).json({
+      message: "CRE execution failed",
+      error: String(err)
+    });
   }
 });
+
 
 router.get("/status", (req, res) => {
   const { batchId } = req.query;
