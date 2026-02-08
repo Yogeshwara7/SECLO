@@ -10,39 +10,46 @@ const StatusCard: React.FC<StatusCardProps> = ({ title, status, description }) =
   const getStatusColor = () => {
     switch (status) {
       case 'online':
-        return '#4CAF50';
+        return '#FA8112'; // Orange for online
       case 'offline':
-        return '#F44336';
+        return '#222222'; // Dark for offline
       case 'warning':
-        return '#FF9800';
+        return '#F5E7C6'; // Medium cream for warning
       default:
-        return '#9E9E9E';
+        return '#F5E7C6';
     }
   };
 
   return (
     <div style={{
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      padding: '16px',
+      border: '2px solid #F5E7C6',
+      borderRadius: '12px',
+      padding: '20px',
       margin: '8px',
-      backgroundColor: '#fff',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      backgroundColor: '#FAF3E1',
+      boxShadow: '0 4px 8px rgba(34, 34, 34, 0.1)',
+      transition: 'transform 0.2s ease',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
         <div
           style={{
-            width: '12px',
-            height: '12px',
+            width: '16px',
+            height: '16px',
             borderRadius: '50%',
             backgroundColor: getStatusColor(),
-            marginRight: '8px'
+            marginRight: '12px',
+            border: status === 'warning' ? '2px solid #222222' : 'none'
           }}
         />
-        <h3 style={{ margin: 0, fontSize: '18px' }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: '20px', color: '#222222' }}>{title}</h3>
       </div>
       {description && (
-        <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+        <p style={{ 
+          margin: 0, 
+          color: '#222222', 
+          fontSize: '14px',
+          opacity: 0.8
+        }}>
           {description}
         </p>
       )}
