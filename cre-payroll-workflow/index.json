@@ -2,24 +2,12 @@
   "batchId": "67d361fd-9dd5-47cd-84b9-b1364ced351e",
   "records": [
     {
-      "employeeId": "0xA1B2C3D4E5F60123456789012345678901234567",
+      "employeeId": "0xb32A36f227E5e43Bb4847F25F13c8C6C1f9956F8",
       "amount": 100
     },
     {
-      "employeeId": "0xB2C3D4E5F6012345678901234567890123456789",
+      "employeeId": "0x26683570CF7BAA2d2CF20450ce04C39f62700775",
       "amount": 250
-    },
-    {
-      "employeeId": "0xC3D4E5F6012345678901234567890123456789AB",
-      "amount": 175
-    },
-    {
-      "employeeId": "0xD4E5F6012345678901234567890123456789ABCD",
-      "amount": 300
-    },
-    {
-      "employeeId": "0xE5F6012345678901234567890123456789ABCDE1",
-      "amount": 450
     }
   ]
 }

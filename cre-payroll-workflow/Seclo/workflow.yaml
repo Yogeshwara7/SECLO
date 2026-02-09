@@ -1,7 +1,95 @@
 name: payroll-workflow
 version: 1.0.0
-description: Payroll workflow with HTTP trigger
+description: Blockchain payroll workflow with ERC20 token transfers
 
+# Configuration
+config:
+  tokenAddress: "0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626"
+  chainSelector: 40875
+
+# Triggers
+triggers:
+  - id: payroll-http
+    type: http-trigger@1.0.0-alpha
+    config: {}
+
+# Actions
+actions:
+  # Parse and validate input
+  - id: parse-input
+    type: script@1.0.0
+    config:
+      code: |
+        const input = JSON.parse(trigger.input);
+        if (!input.batchId || !input.records || input.records.length === 0) {
+          throw new Error("Invalid input: missing batchId or records");
+        }
+        return input;
+
+  # Execute transfers for each employee
+  - id: execute-transfers
+    type: for-each@1.0.0
+    config:
+      items: ${parse-input.output.records}
+      action:
+        type: evm-contract-call@1.0.0
+        config:
+          chain: evm:ChainSelector:40875@1.0.0
+          contract: "0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626"
+          method: "transfer"
+          abi: |
+            [
+              {
+                "inputs": [
+                  {"name": "to", "type": "address"},
+                  {"name": "amount", "type": "uint256"}
+                ],
+                "name": "transfer",
+                "outputs": [{"name": "", "type": "bool"}],
+                "stateMutability": "nonpayable",
+                "type": "function"
+              }
+            ]
+          args:
+            - ${item.employeeId}
+            - ${item.amount * 1000000000000000000}  # Convert to wei (18 decimals)
+
+  # Format results
+  - id: format-results
+    type: script@1.0.0
+    config:
+      code: |
+        const input = parse_input.output;
+        const transfers = execute_transfers.output;
+        
+        const payouts = transfers.map((tx, index) => ({
+          employee: input.records[index].employeeId,
+          amount: input.records[index].amount,
+          txHash: tx.hash,
+          status: tx.success ? "success" : "failed"
+        }));
+        
+        const successCount = payouts.filter(p => p.status === "success").length;
+        const totalAmount = payouts
+          .filter(p => p.status === "success")
+          .reduce((sum, p) => sum + p.amount, 0);
+        
+        return {
+          batchId: input.batchId,
+          result: `Processed batch ${input.batchId}: ${successCount}/${payouts.length} successful transfers, Total: ${totalAmount} SCLO`,
+          payouts: payouts
+        };
+
+# Workflow definition
+workflows:
+  - name: main
+    steps:
+      - trigger: payroll-http
+      - action: parse-input
+      - action: execute-transfers
+      - action: format-results
+
+# Environment-specific settings
 staging-settings:
   user-workflow:
     workflow-name: payroll-workflow-staging
@@ -9,6 +97,13 @@ staging-settings:
     workflow-path: "."
     config-path: "./config.staging.json"
     secrets-path: ""
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia
+      url: https://ethereum-sepolia-rpc.publicnode.com
+  experimental-chains:
+    - chain-selector: 40875
+      rpc-url: "https://0xrpc.io/hoodi"
+      forwarder: "0x0000000000000000000000000000000000000000"
 
 production-settings:
   user-workflow:

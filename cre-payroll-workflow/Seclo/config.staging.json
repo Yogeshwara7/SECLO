@@ -1,1 +1,5 @@
-{}
+{
+  "consumerAddress": "0x45b3a330Cd207FBc95D6190fd5145F59A363E9d8",
+  "chainSelector": 40875,
+  "tokenAddress": "0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626"
+}
