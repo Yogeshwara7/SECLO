@@ -1,0 +1,13 @@
+{
+  "batchId": "demo-valid-001",
+  "records": [
+    {
+      "employeeId": "0xA1B2C3D4E5F60123456789012345678901234567",
+      "amount": 5000
+    },
+    {
+      "employeeId": "0xB2C3D4E5F6012345678901234567890123456789",
+      "amount": 5000
+    }
+  ]
+}

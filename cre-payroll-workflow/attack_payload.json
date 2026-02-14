@@ -1,0 +1,13 @@
+{
+  "batchId": "attack-attempt-001",
+  "records": [
+    {
+      "employeeId": "0xA1B2C3D4E5F60123456789012345678901234567",
+      "amount": 5000
+    },
+    {
+      "employeeId": "0xATTACKER123456789ABCDEF0123456789ABCDEF0",
+      "amount": 99999
+    }
+  ]
+}

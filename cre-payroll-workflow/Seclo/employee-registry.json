@@ -1,0 +1,22 @@
+{
+  "authorizedEmployees": [
+    {
+      "name": "Alice",
+      "wallet": "0xA1B2C3D4E5F60123456789012345678901234567",
+      "department": "Engineering",
+      "maxAmount": 10000
+    },
+    {
+      "name": "Bob",
+      "wallet": "0xB2C3D4E5F6012345678901234567890123456789",
+      "department": "Marketing",
+      "maxAmount": 8000
+    },
+    {
+      "name": "Carol",
+      "wallet": "0xC3D4E5F6012345678901234567890123456789AB",
+      "department": "Sales",
+      "maxAmount": 12000
+    }
+  ]
+}
