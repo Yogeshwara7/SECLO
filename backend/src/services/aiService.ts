@@ -1,7 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PayrollBatch, PayrollRecord } from '../models/payroll';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+import { PayrollBatch } from '../models/payroll';
 
 export interface AIResponse {
   type: 'payroll' | 'analytics' | 'report';
@@ -31,170 +31,212 @@ const mockHistoricalData = [
 
 // Employee registry for AI context
 const employeeRegistry = [
-  { name: "Alice", wallet: "0xA1B2C3D4E5F60123456789012345678901234567", department: "Engineering", maxAmount: 10000 },
-  { name: "Bob", wallet: "0xB2C3D4E5F6012345678901234567890123456789", department: "Marketing", maxAmount: 8000 },
-  { name: "Carol", wallet: "0xC3D4E5F6012345678901234567890123456789AB", department: "Sales", maxAmount: 12000 },
-  { name: "David", wallet: "0xD4E5F6012345678901234567890123456789ABCD", department: "Engineering", maxAmount: 9000 },
-  { name: "Eve", wallet: "0xE5F6012345678901234567890123456789ABCDE1", department: "HR", maxAmount: 7500 }
+  {
+    name: "Alice",
+    wallet: "0xA1B2C3D4E5F60123456789012345678901234567",
+    department: "Engineering",
+    maxAmount: 10000
+  },
+  {
+    name: "Bob",
+    wallet: "0xB2C3D4E5F6012345678901234567890123456789",
+    department: "Marketing",
+    maxAmount: 8000
+  },
+  {
+    name: "Carol",
+    wallet: "0xC3D4E5F6012345678901234567890123456789AB",
+    department: "Sales",
+    maxAmount: 12000
+  },
+  {
+    name: "David",
+    wallet: "0xD4E5F6012345678901234567890123456789ABCD",
+    department: "Engineering",
+    maxAmount: 9000
+  },
+  {
+    name: "Eve",
+    wallet: "0xE5F6012345678901234567890123456789ABCDE1",
+    department: "HR",
+    maxAmount: 7500
+  }
 ];
 
 export class AIPayrollService {
-  private model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+  private model;
+
+  constructor() {
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      console.error("❌ GEMINI_API_KEY not found in environment variables");
+      throw new Error("Missing GEMINI_API_KEY in .env file");
+    }
+
+    console.log("✅ Gemini API key loaded");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    this.model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash"
+    });
+  }
 
   async processQuery(userQuery: string): Promise<AIResponse> {
+
     try {
+
       console.log('🤖 AI Processing query:', userQuery);
 
       const systemPrompt = `
-You are SECLO AI, an intelligent payroll assistant for a blockchain-based payroll system. 
+You are SECLO AI, an intelligent payroll assistant for a blockchain payroll system.
 
 CONTEXT:
-- Company uses SCLO tokens for payments on Hoodi blockchain
-- Employee registry: ${JSON.stringify(employeeRegistry, null, 2)}
-- Historical data: ${JSON.stringify(mockHistoricalData, null, 2)}
+Company uses SCLO tokens on Hoodi blockchain.
 
-CAPABILITIES:
-1. PAYROLL PROCESSING: Convert natural language to payroll JSON
-2. ANALYTICS: Analyze payroll data and trends
-3. REPORTS: Generate detailed payroll reports
+Employee Registry:
+${JSON.stringify(employeeRegistry, null, 2)}
+
+Historical Data:
+${JSON.stringify(mockHistoricalData, null, 2)}
 
 RESPONSE FORMAT:
-Always respond with a JSON object containing:
+Return ONLY valid JSON.
+
 {
   "type": "payroll" | "analytics" | "report",
-  "success": true/false,
-  "data": {...},
-  "message": "human readable response",
-  "executionPlan": ["step1", "step2", ...]
-}
-
-PAYROLL FORMAT (when type="payroll"):
-{
-  "type": "payroll",
   "success": true,
-  "data": {
-    "batchId": "ai-generated-batch-id",
-    "records": [
-      {"employeeId": "wallet_address", "amount": number}
-    ]
-  },
-  "message": "Processing payroll for X employees",
-  "executionPlan": ["Validate employees", "Check amounts", "Execute CRE workflow"]
-}
-
-ANALYTICS FORMAT (when type="analytics"):
-{
-  "type": "analytics",
-  "success": true,
-  "data": {
-    "totalAmount": number,
-    "employeeCount": number,
-    "averageAmount": number,
-    "departmentBreakdown": {"Engineering": 25000, "Marketing": 15000},
-    "trends": ["Cost increased 10% vs last month"],
-    "recommendations": ["Consider salary bands for cost control"]
-  },
-  "message": "Analytics summary",
-  "executionPlan": ["Analyze historical data", "Calculate trends", "Generate insights"]
-}
-
-REPORT FORMAT (when type="report"):
-{
-  "type": "report",
-  "success": true,
-  "data": {
-    "title": "Monthly Payroll Report",
-    "summary": "Executive summary text",
-    "sections": [
-      {"title": "Overview", "content": "..."},
-      {"title": "Department Breakdown", "content": "..."}
-    ],
-    "charts": [
-      {"type": "bar", "title": "Department Costs", "data": {...}}
-    ]
-  },
-  "message": "Report generated successfully",
-  "executionPlan": ["Gather data", "Analyze trends", "Format report"]
+  "data": {},
+  "message": "",
+  "executionPlan": []
 }
 
 RULES:
-- Only use employees from the registry
-- Respect max amount limits
-- Generate realistic batch IDs
-- Provide helpful error messages
-- Always include execution plan
+- Only use employees from registry
+- Respect maxAmount limits
+- Always include executionPlan
 `;
 
-      const prompt = `${systemPrompt}\n\nUser Query: "${userQuery}"\n\nRespond with appropriate JSON:`;
+      const prompt = `
+${systemPrompt}
+
+User Query: ${userQuery}
+
+Return JSON only:
+`;
 
       const result = await this.model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
 
-      console.log('🤖 AI Raw response:', text);
+      const text = result.response.text();
 
-      // Extract JSON from response
+      console.log("🤖 Raw Gemini response:", text);
+
+      // Extract JSON safely
       const jsonMatch = text.match(/\{[\s\S]*\}/);
+
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in AI response');
+
+        throw new Error("No JSON found in AI response");
+
       }
 
-      const aiResponse: AIResponse = JSON.parse(jsonMatch[0]);
-      console.log('🤖 AI Parsed response:', aiResponse);
+      const parsed: AIResponse = JSON.parse(jsonMatch[0]);
 
-      return aiResponse;
+      console.log("✅ Parsed AI response:", parsed);
 
-    } catch (error) {
-      console.error('❌ AI Service error:', error);
+      return parsed;
+
+    } catch (error: any) {
+
+      console.error("❌ AI Service error:", error.message);
+
       return {
-        type: 'report',
+        type: "report",
         success: false,
-        message: `AI processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        executionPlan: ['Error occurred during processing']
+        message: error.message,
+        executionPlan: ["AI processing failed"]
       };
+
     }
+
   }
 
-  async generatePayrollAnalytics(batches: PayrollBatch[]): Promise<PayrollAnalytics> {
-    const totalAmount = batches.reduce((sum, batch) => 
-      sum + batch.records.reduce((batchSum, record) => batchSum + record.amount, 0), 0
+  async generatePayrollAnalytics(
+    batches: PayrollBatch[]
+  ): Promise<PayrollAnalytics> {
+
+    const totalAmount = batches.reduce(
+      (sum, batch) =>
+        sum +
+        batch.records.reduce(
+          (batchSum, record) => batchSum + record.amount,
+          0
+        ),
+      0
     );
 
-    const totalEmployees = new Set(
-      batches.flatMap(batch => batch.records.map(record => record.wallet))
-    ).size;
+    const uniqueEmployees = new Set(
+      batches.flatMap(batch =>
+        batch.records.map(record => record.wallet.toLowerCase())
+      )
+    );
 
     const departmentBreakdown: Record<string, number> = {};
-    
+
     batches.forEach(batch => {
+
       batch.records.forEach(record => {
-        const employee = employeeRegistry.find(emp => 
-          emp.wallet.toLowerCase() === record.wallet.toLowerCase()
+
+        const employee = employeeRegistry.find(
+          emp =>
+            emp.wallet.toLowerCase() ===
+            record.wallet.toLowerCase()
         );
+
         if (employee) {
-          departmentBreakdown[employee.department] = 
-            (departmentBreakdown[employee.department] || 0) + record.amount;
+
+          departmentBreakdown[employee.department] =
+            (departmentBreakdown[employee.department] || 0)
+            + record.amount;
+
         }
+
       });
+
     });
 
+    const employeeCount = uniqueEmployees.size;
+
     return {
+
       totalAmount,
-      employeeCount: totalEmployees,
-      averageAmount: totalAmount / totalEmployees,
+
+      employeeCount,
+
+      averageAmount:
+        employeeCount === 0
+          ? 0
+          : totalAmount / employeeCount,
+
       departmentBreakdown,
+
       trends: [
-        `Total payroll: ${totalAmount.toLocaleString()} SCLO`,
-        `Average per employee: ${(totalAmount / totalEmployees).toFixed(0)} SCLO`,
-        'Engineering department has highest costs'
+        `Total payroll: ${totalAmount} SCLO`,
+        `Employees paid: ${employeeCount}`
       ],
+
       recommendations: [
-        'Consider implementing salary bands',
-        'Monitor department cost growth',
-        'Review high-cost employees for retention'
+        "Monitor payroll growth",
+        "Optimize department spending"
       ]
+
     };
+
   }
+
 }
 
 export const aiService = new AIPayrollService();
