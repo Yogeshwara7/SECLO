@@ -12,7 +12,8 @@ export function createBatch(records: PayrollRecord[]): PayrollBatch {
     const batch: PayrollBatch = {
         id,
         records,
-        status: "uploaded"
+        status: "uploaded",
+        createdAt: new Date().toISOString()
     };
     batches[id] = batch;
     return batch;
@@ -20,6 +21,12 @@ export function createBatch(records: PayrollRecord[]): PayrollBatch {
 
 export function getBatch(id: string) {
     return batches[id];
+}
+
+export function getAllBatches(): PayrollBatch[] {
+    return Object.values(batches).sort((a, b) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
 }
 
 export function updateStatus(id: string, status: PayrollBatch["status"]) {

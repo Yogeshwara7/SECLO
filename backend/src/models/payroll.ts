@@ -8,4 +8,5 @@ export interface PayrollBatch{
     id:string;
     records:PayrollRecord[];
     status:"uploaded"| "processing" | "processed" | "failed";
+    createdAt?: string;
 }

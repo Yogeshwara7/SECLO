@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Status from "./pages/Status";
+import AI from "./pages/AI";
 
 function App(){
   return(
@@ -13,6 +14,7 @@ function App(){
         <Route path="/" element={<Dashboard/>}/>
         <Route path="/upload" element={<Upload/>}/>
         <Route path="/status" element={<Status/>}/>
+        <Route path="/ai" element={<AI/>}/>
       </Routes>
     
     </BrowserRouter>

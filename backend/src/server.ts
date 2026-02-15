@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import payrollRoutes from './routes/payroll';
+import aiRoutes from './routes/ai';
 
 dotenv.config();
 
@@ -23,6 +24,9 @@ app.get('/api/health', (req, res) => {
 
 // Payroll routes
 app.use('/payroll', payrollRoutes);
+
+// AI routes
+app.use('/ai', aiRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

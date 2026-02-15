@@ -42,41 +42,6 @@ type PayrollRequest struct {
 	} `json:"records"`
 }
 
-type EmployeeRegistry struct {
-	AuthorizedEmployees []AuthorizedEmployee `json:"authorizedEmployees"`
-}
-
-type AuthorizedEmployee struct {
-	Name       string  `json:"name"`
-	Wallet     string  `json:"wallet"`
-	Department string  `json:"department"`
-	MaxAmount  float64 `json:"maxAmount"`
-}
-
-// Hardcoded employee registry for WASM environment
-var employeeRegistry = EmployeeRegistry{
-	AuthorizedEmployees: []AuthorizedEmployee{
-		{
-			Name:       "Alice",
-			Wallet:     "0xA1B2C3D4E5F60123456789012345678901234567",
-			Department: "Engineering",
-			MaxAmount:  10000,
-		},
-		{
-			Name:       "Bob",
-			Wallet:     "0xB2C3D4E5F6012345678901234567890123456789",
-			Department: "Marketing",
-			MaxAmount:  8000,
-		},
-		{
-			Name:       "Carol",
-			Wallet:     "0xC3D4E5F6012345678901234567890123456789AB",
-			Department: "Sales",
-			MaxAmount:  12000,
-		},
-	},
-}
-
 func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.SecretsProvider) (cre.Workflow[*Config], error) {
 	httpTrigger := http.Trigger(&http.Config{})
 
@@ -117,6 +82,10 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	logger.Info("🔍 VALIDATING AGAINST EMPLOYEE REGISTRY...")
 	logger.Info("─────────────────────────────────────────────────")
 
+	// Load employee registry
+	registry := GetEmployeeRegistry()
+	logger.Info(fmt.Sprintf("📋 Loaded %d authorized employees", len(registry.AuthorizedEmployees)))
+
 	// Process each record with policy enforcement
 	var payouts []PayoutResult
 	var errors []string
@@ -125,12 +94,12 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	rejectedCount := 0
 
 	for i, record := range requestData.Records {
-		logger.Info(fmt.Sprintf("\n👤 Record %d/%d", i+1, len(requestData.Records)))
+		logger.Info(fmt.Sprintf("\n� Record %d/%d", i+1, len(requestData.Records)))
 		logger.Info(fmt.Sprintf("   Address: %s", record.EmployeeID))
 		logger.Info(fmt.Sprintf("   Amount: %.2f SCLO", record.Amount))
 
 		// Validate against employee registry
-		employee, authorized := validateEmployee(record.EmployeeID, record.Amount, logger)
+		employee, authorized := validateEmployee(record.EmployeeID, record.Amount, registry, logger)
 
 		payout := PayoutResult{
 			Employee: record.EmployeeID,
@@ -185,11 +154,11 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	}, nil
 }
 
-func validateEmployee(wallet string, amount float64, logger *slog.Logger) (*AuthorizedEmployee, bool) {
+func validateEmployee(wallet string, amount float64, registry EmployeeRegistry, logger *slog.Logger) (*AuthorizedEmployee, bool) {
 	// Normalize wallet address for comparison
 	walletLower := strings.ToLower(wallet)
 
-	for _, emp := range employeeRegistry.AuthorizedEmployees {
+	for _, emp := range registry.AuthorizedEmployees {
 		if strings.ToLower(emp.Wallet) == walletLower {
 			// Check if amount exceeds max allowed
 			if amount > emp.MaxAmount {

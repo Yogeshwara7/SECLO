@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { upload } from "../utils/upload";
 import { parseCSV } from "../services/csvService";
-import { createBatch, getBatch, updateStatus } from "../services/payrollService";
+import { createBatch, getBatch, updateStatus, getAllBatches } from "../services/payrollService";
 import { processPrivatePayout } from "../services/payrollService";
 
 const router = Router();
@@ -68,6 +68,21 @@ router.get("/status", (req, res) => {
     status: batch.status,
     records: batch.records.length,
   });
+});
+
+// New endpoint to get all batches for Status dashboard
+router.get("/batches", (req, res) => {
+  const allBatches = getAllBatches();
+  
+  const batchSummaries = allBatches.map(batch => ({
+    id: batch.id,
+    status: batch.status,
+    records: batch.records.length,
+    createdAt: batch.createdAt || new Date().toISOString(),
+    totalAmount: batch.records.reduce((sum, record) => sum + record.amount, 0)
+  }));
+
+  res.json(batchSummaries);
 });
 
 export default router;
