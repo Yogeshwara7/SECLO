@@ -4,10 +4,13 @@ import dotenv from 'dotenv';
 import payrollRoutes from './routes/payroll';
 import aiRoutes from './routes/ai';
 
+// Initialize database (auto-creates tables on startup - critical for Render)
+import './db/init';
+
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Middleware
 app.use(cors());

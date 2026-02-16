@@ -26,11 +26,68 @@ actions:
         }
         return input;
 
+  # Risk & compliance gate (allowlist + maxAmount). Blocks non-compliant records from execution.
+  - id: risk-check
+    type: script@1.0.0
+    config:
+      code: |
+        const input = parse_input.output;
+        const registry = (config && Array.isArray(config.authorizedEmployees))
+          ? config.authorizedEmployees
+          : [];
+        
+        if (registry.length === 0) {
+          throw new Error("Compliance config missing: config.authorizedEmployees must be provided");
+        }
+        
+        const approvedRecords = [];
+        const violations = [];
+        
+        for (const r of input.records) {
+          const wallet = String(r.employeeId || "").toLowerCase();
+          const amount = Number(r.amount || 0);
+          const emp = registry.find(e => String(e.wallet || "").toLowerCase() === wallet);
+        
+          if (!emp) {
+            violations.push({
+              employeeId: r.employeeId,
+              amount,
+              reason: "UNAUTHORIZED_EMPLOYEE"
+            });
+            continue;
+          }
+        
+          if (amount > Number(emp.maxAmount)) {
+            violations.push({
+              employeeId: r.employeeId,
+              amount,
+              reason: "AMOUNT_EXCEEDS_LIMIT",
+              employeeName: emp.name,
+              department: emp.department,
+              maxAllowed: emp.maxAmount
+            });
+            continue;
+          }
+        
+          approvedRecords.push({ employeeId: r.employeeId, amount });
+        }
+        
+        return {
+          batchId: input.batchId,
+          approvedRecords,
+          violations,
+          summary: {
+            requested: input.records.length,
+            approved: approvedRecords.length,
+            rejected: violations.length
+          }
+        };
+
   # Execute transfers for each employee
   - id: execute-transfers
     type: for-each@1.0.0
     config:
-      items: ${parse-input.output.records}
+      items: ${risk-check.output.approvedRecords}
       action:
         type: evm-contract-call@1.0.0
         config:
@@ -60,11 +117,12 @@ actions:
     config:
       code: |
         const input = parse_input.output;
+        const compliance = risk_check.output;
         const transfers = execute_transfers.output;
         
         const payouts = transfers.map((tx, index) => ({
-          employee: input.records[index].employeeId,
-          amount: input.records[index].amount,
+          employee: compliance.approvedRecords[index].employeeId,
+          amount: compliance.approvedRecords[index].amount,
           txHash: tx.hash,
           status: tx.success ? "success" : "failed"
         }));
@@ -76,8 +134,14 @@ actions:
         
         return {
           batchId: input.batchId,
-          result: `Processed batch ${input.batchId}: ${successCount}/${payouts.length} successful transfers, Total: ${totalAmount} SCLO`,
-          payouts: payouts
+          compliance: {
+            ...compliance.summary,
+            violations: compliance.violations
+          },
+          result: compliance.violations.length > 0
+            ? `COMPLIANCE BLOCKED: Batch ${input.batchId}: ${compliance.summary.approved}/${compliance.summary.requested} approved, ${compliance.summary.rejected} rejected. Transfers executed for approved only.`
+            : `Processed batch ${input.batchId}: ${successCount}/${payouts.length} successful transfers, Total: ${totalAmount} SCLO`,
+          payouts
         };
 
 # Workflow definition
@@ -86,6 +150,7 @@ workflows:
     steps:
       - trigger: payroll-http
       - action: parse-input
+      - action: risk-check
       - action: execute-transfers
       - action: format-results
 

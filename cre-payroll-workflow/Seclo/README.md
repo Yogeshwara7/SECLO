@@ -1,22 +1,31 @@
-# Blank Workflow Example
+# SECLO Payroll CRE Workflow (Simulation)
 
-This template provides a blank workflow example. It aims to give a starting point for writing a workflow from scratch and to get started with local simulation.
+This workflow is the **onchain execution/orchestration layer** for SECLO payroll. It:
 
-Steps to run the example
+- Accepts an HTTP payload (`batchId`, `records[]`)
+- Executes ERC-20 `transfer()` calls on the configured chain (Hoodi selector `40875`)
+- Returns a formatted summary of payouts and tx hashes
 
-## 1. Update .env file
+## Files that matter (Chainlink / CRE)
 
-You need to add a private key to env file. This is specifically required if you want to simulate chain writes. For that to work the key should be valid and funded.
-If your workflow does not do any chain write then you can just put any dummy key as a private key. e.g.
-```
-CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
-```
+- `workflow.yaml`: CRE workflow definition (HTTP trigger → validate → for-each EVM contract call)
+- `config.staging.json` / `config.production.json`: CRE workflow config
+- `employee-registry.json`: example registry (currently **not enforced** by `workflow.yaml`)
 
-## 2. Simulate the workflow
-Run the command from <b>project root directory</b>
+## Required environment
+
+For simulations that perform chain writes, CRE typically needs a funded private key:
 
 ```bash
-cre workflow simulate <path-to-workflow> --target=staging-settings
+CRE_ETH_PRIVATE_KEY=...your funded key...
 ```
 
-It is recommended to look into other existing examples to see how to write a workflow. You can generate then by running the `cre init` command.
+## Simulate via CRE CLI
+
+Run from the `cre-payroll-workflow/` directory:
+
+```bash
+cre workflow simulate Seclo --non-interactive --trigger-index 0 --http-payload "{\"batchId\":\"demo\",\"records\":[{\"employeeId\":\"0x...\",\"amount\":5}]}" --target staging-settings
+```
+
+Or run the full app flow (recommended): call the backend `/ai/query` endpoint and let it trigger the CRE simulation.

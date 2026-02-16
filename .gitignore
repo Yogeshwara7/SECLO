@@ -39,3 +39,8 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Database files
+*.db
+*.db-journal
+database.db

@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { aiService } from "../services/aiService";
-import { processPrivatePayout, getBatch, createBatch } from "../services/payrollService";
+import { processPrivatePayout, createBatch, getAllBatches } from "../services/payrollService";
 import { PayrollRecord } from "../models/payroll";
+import { evaluatePayrollRisk } from "../services/riskService";
 
 const router = Router();
 
@@ -17,42 +18,84 @@ router.post("/query", async (req, res) => {
       });
     }
 
-    console.log('🤖 Processing AI query:', query);
+    console.log('Processing AI query:', query);
 
     const aiResponse = await aiService.processQuery(query);
+    
+    console.log('AI service returned:', JSON.stringify(aiResponse, null, 2));
 
     // If it's a payroll request, execute it
     if (aiResponse.type === 'payroll' && aiResponse.success && aiResponse.data) {
       try {
-        console.log('🚀 Executing AI-generated payroll...');
+        console.log('Executing AI-generated payroll...');
         
+        // Safe access to records array - handle multiple field names
+        const aiRecords = aiResponse.data.records || 
+                         aiResponse.data.payments || 
+                         aiResponse.data.transactions || 
+                         [];
+        
+        // Validate that we have records
+        if (!Array.isArray(aiRecords) || aiRecords.length === 0) {
+          throw new Error(`No valid payroll records found. Data structure: ${JSON.stringify(aiResponse.data)}`);
+        }
+
         // Create payroll records from AI response
-        const records: PayrollRecord[] = aiResponse.data.records.map((record: any) => ({
-          wallet: record.employeeId,
+        const records: PayrollRecord[] = aiRecords.map((record: any) => ({
+          wallet: record.employeeId || record.wallet || record.address,
           amount: record.amount,
           currency: 'SCLO'
         }));
 
-        // Create batch
-        const batch = createBatch(records);
-        console.log('📦 Created batch:', batch.id);
+        // Validate that we have valid wallet addresses
+        if (records.some(r => !r.wallet || !r.amount)) {
+          throw new Error('Invalid record format: missing wallet address or amount');
+        }
+
+        // Run risk & compliance checks before creating a batch / calling CRE
+        const { approved, violations } = evaluatePayrollRisk(records);
+
+        if (violations.length > 0) {
+          console.warn('Risk/compliance violations detected:', violations);
+          return res.json({
+            ...aiResponse,
+            success: false,
+            message: `Risk/compliance check failed for ${violations.length} record(s). No transfers executed.`,
+            execution: {
+              status: 'failed' as const,
+              error: 'Risk/compliance check failed',
+              // Extra metadata for frontend / logs
+              violations,
+            },
+          });
+        }
+
+        // Create batch only for approved records
+        const batch = createBatch(approved);
+        console.log('Created batch:', batch.id);
 
         // Execute CRE workflow
         const creResult = await processPrivatePayout(batch.id);
-        console.log('✅ CRE execution completed');
+        console.log('CRE execution completed');
 
         // Return combined response
         res.json({
           ...aiResponse,
+          data: {
+            ...(aiResponse.data || {}),
+            batchId: batch.id,
+            records: approved.map(r => ({ employeeId: r.wallet, amount: r.amount })),
+          },
           execution: {
             batchId: batch.id,
+            records: approved.length,
             creResult: creResult.creResult,
             status: 'completed'
           }
         });
 
       } catch (executionError) {
-        console.error('❌ Payroll execution failed:', executionError);
+        console.error('Payroll execution failed:', executionError);
         res.json({
           ...aiResponse,
           execution: {
@@ -67,7 +110,7 @@ router.post("/query", async (req, res) => {
     }
 
   } catch (error) {
-    console.error('❌ AI query error:', error);
+    console.error('AI query error:', error);
     res.status(500).json({
       success: false,
       message: "AI processing failed",
@@ -79,20 +122,8 @@ router.post("/query", async (req, res) => {
 // Get AI analytics for existing batches
 router.get("/analytics", async (req, res) => {
   try {
-    // In a real app, you'd fetch from database
-    // For now, we'll use mock data
-    const mockBatches = [
-      {
-        id: "batch-1",
-        records: [
-          { wallet: "0xA1B2C3D4E5F60123456789012345678901234567", amount: 5000, currency: "SCLO" },
-          { wallet: "0xB2C3D4E5F6012345678901234567890123456789", amount: 4000, currency: "SCLO" }
-        ],
-        status: "processed" as const
-      }
-    ];
-
-    const analytics = await aiService.generatePayrollAnalytics(mockBatches);
+    const batches = getAllBatches();
+    const analytics = await aiService.generatePayrollAnalytics(batches);
     
     res.json({
       success: true,
@@ -100,7 +131,7 @@ router.get("/analytics", async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Analytics error:', error);
+    console.error('Analytics error:', error);
     res.status(500).json({
       success: false,
       message: "Analytics generation failed",

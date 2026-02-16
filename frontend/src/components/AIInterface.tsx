@@ -43,41 +43,49 @@ const AIInterface = () => {
     }
   };
 
-  const renderPayrollData = (data: any) => (
-    <div style={{ marginTop: '15px' }}>
-      <h4 style={{ color: '#222222', marginBottom: '10px' }}>📋 Payroll Details</h4>
-      <div style={{ 
-        backgroundColor: '#FAF3E1', 
-        padding: '15px', 
-        borderRadius: '8px',
-        border: '2px solid #FA8112'
-      }}>
-        <p><strong>Batch ID:</strong> {data.batchId}</p>
-        <p><strong>Employees:</strong> {data.records?.length || 0}</p>
-        <div style={{ marginTop: '10px' }}>
-          <strong>Records:</strong>
-          {data.records?.map((record: any, index: number) => (
-            <div key={index} style={{ 
-              marginLeft: '20px', 
-              padding: '5px 0',
-              borderBottom: '1px solid #F5E7C6'
-            }}>
-              <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                {record.employeeId.substring(0, 10)}...
-              </span>
-              <span style={{ float: 'right', fontWeight: 'bold' }}>
-                {record.amount} SCLO
-              </span>
+  const renderPayrollData = (data: any) => {
+    // Handle multiple possible field names for records
+    const records = data.records || data.payments || data.transactions || [];
+    const batchId = data.batchId || response?.execution?.batchId || 'N/A';
+    
+    return (
+      <div style={{ marginTop: '15px' }}>
+        <h4 style={{ color: '#222222', marginBottom: '10px' }}>Payroll Details</h4>
+        <div style={{ 
+          backgroundColor: '#FAF3E1', 
+          padding: '15px', 
+          borderRadius: '8px',
+          border: '2px solid #FA8112'
+        }}>
+          <p><strong>Batch ID:</strong> {batchId}</p>
+          <p><strong>Employees:</strong> {Array.isArray(records) ? records.length : 0}</p>
+          {Array.isArray(records) && records.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <strong>Records:</strong>
+              {records.map((record: any, index: number) => (
+                <div key={index} style={{ 
+                  marginLeft: '20px', 
+                  padding: '5px 0',
+                  borderBottom: '1px solid #F5E7C6'
+                }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                    {(record.employeeId || record.wallet || 'Unknown')?.substring(0, 10)}...
+                  </span>
+                  <span style={{ float: 'right', fontWeight: 'bold' }}>
+                    {record.amount || 0} SCLO
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderAnalyticsData = (data: any) => (
     <div style={{ marginTop: '15px' }}>
-      <h4 style={{ color: '#222222', marginBottom: '10px' }}>📊 Analytics</h4>
+      <h4 style={{ color: '#222222', marginBottom: '10px' }}>Analytics</h4>
       <div style={{ 
         backgroundColor: '#FAF3E1', 
         padding: '15px', 
@@ -100,9 +108,9 @@ const AIInterface = () => {
           </div>
         </div>
         
-        {data.trends && (
+        {Array.isArray(data.trends) && data.trends.length > 0 && (
           <div style={{ marginTop: '15px' }}>
-            <strong>📈 Trends:</strong>
+            <strong>Trends:</strong>
             <ul style={{ marginLeft: '20px' }}>
               {data.trends.map((trend: string, index: number) => (
                 <li key={index}>{trend}</li>
@@ -111,9 +119,9 @@ const AIInterface = () => {
           </div>
         )}
 
-        {data.recommendations && (
+        {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
           <div style={{ marginTop: '15px' }}>
-            <strong>💡 Recommendations:</strong>
+            <strong>Recommendations:</strong>
             <ul style={{ marginLeft: '20px' }}>
               {data.recommendations.map((rec: string, index: number) => (
                 <li key={index}>{rec}</li>
@@ -127,7 +135,7 @@ const AIInterface = () => {
 
   const renderReportData = (data: any) => (
     <div style={{ marginTop: '15px' }}>
-      <h4 style={{ color: '#222222', marginBottom: '10px' }}>📄 {data.title || 'Report'}</h4>
+      <h4 style={{ color: '#222222', marginBottom: '10px' }}>{data.title || 'Report'}</h4>
       <div style={{ 
         backgroundColor: '#FAF3E1', 
         padding: '15px', 
@@ -153,7 +161,7 @@ const AIInterface = () => {
 
   const renderExecutionResult = (execution: any) => (
     <div style={{ marginTop: '15px' }}>
-      <h4 style={{ color: '#222222', marginBottom: '10px' }}>⚡ Execution Result</h4>
+      <h4 style={{ color: '#222222', marginBottom: '10px' }}>Execution Result</h4>
       <div style={{ 
         backgroundColor: execution.status === 'completed' ? '#E8F5E8' : '#FFE8E8', 
         padding: '15px', 
@@ -162,6 +170,7 @@ const AIInterface = () => {
       }}>
         <p><strong>Status:</strong> {execution.status}</p>
         {execution.batchId && <p><strong>Batch ID:</strong> {execution.batchId}</p>}
+        {execution.records !== undefined && <p><strong>Records Processed:</strong> {execution.records}</p>}
         {execution.creResult && (
           <div style={{ marginTop: '10px' }}>
             <strong>CRE Result:</strong>
@@ -173,7 +182,9 @@ const AIInterface = () => {
               overflow: 'auto',
               maxHeight: '200px'
             }}>
-              {execution.creResult}
+              {typeof execution.creResult === 'string' 
+                ? execution.creResult 
+                : JSON.stringify(execution.creResult, null, 2)}
             </pre>
           </div>
         )}
@@ -198,7 +209,7 @@ const AIInterface = () => {
         marginBottom: '30px',
         textAlign: 'center'
       }}>
-        🤖 SECLO AI Assistant
+        SECLO Assistant
       </h3>
       
       <div style={{ 
@@ -259,7 +270,7 @@ const AIInterface = () => {
               transition: 'all 0.2s ease'
             }}
           >
-            {isLoading ? '🤖 Processing...' : '🚀 Ask SECLO AI'}
+            {isLoading ? 'Processing...' : 'Ask SECLO AI'}
           </button>
         </form>
 
@@ -273,15 +284,14 @@ const AIInterface = () => {
               marginBottom: '15px'
             }}>
               <h4 style={{ margin: '0 0 10px 0', color: '#222222' }}>
-                {response.type === 'payroll' ? '💰' : response.type === 'analytics' ? '📊' : '📄'} 
-                {' '}{response.type.toUpperCase()} Response
+                {response.type.toUpperCase()} Response
               </h4>
               <p style={{ margin: 0, fontWeight: 'bold' }}>{response.message}</p>
             </div>
 
-            {response.executionPlan && (
+            {response.executionPlan && Array.isArray(response.executionPlan) && response.executionPlan.length > 0 && (
               <div style={{ marginBottom: '15px' }}>
-                <strong>🔄 Execution Plan:</strong>
+                <strong>Execution Plan:</strong>
                 <ol style={{ marginLeft: '20px' }}>
                   {response.executionPlan.map((step, index) => (
                     <li key={index}>{step}</li>
