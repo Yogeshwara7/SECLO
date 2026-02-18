@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/confidentialhttp"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/cre"
 	"github.com/smartcontractkit/cre-sdk-go/cre/wasm"
@@ -50,6 +51,37 @@ func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.Secre
 	}, nil
 }
 
+func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry, error) {
+	logger := runtime.Logger()
+	logger.Info("Fetching employee registry via Confidential HTTP")
+
+	client := confidentialhttp.Client{}
+	resp, err := client.SendRequest(runtime, &confidentialhttp.ConfidentialHTTPRequest{
+		Request: &confidentialhttp.HTTPRequest{
+			Url:    config.EmployeeRegistryPath,
+			Method: "GET",
+			MultiHeaders: map[string]*confidentialhttp.HeaderValues{
+				"Authorization": {
+					Values: []string{"Basic {{.myApiKey}}"},
+				},
+			},
+		},
+		VaultDonSecrets: []*confidentialhttp.SecretIdentifier{
+			{Key: "myApiKey"},
+		},
+	}).Await()
+	if err != nil {
+		return EmployeeRegistry{}, fmt.Errorf("confidential HTTP request failed: %w", err)
+	}
+
+	var registry EmployeeRegistry
+	if err := json.Unmarshal(resp.Body, &registry); err != nil {
+		return EmployeeRegistry{}, fmt.Errorf("failed to parse registry JSON: %w", err)
+	}
+
+	return registry, nil
+}
+
 func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (*ExecutionResult, error) {
 	logger := runtime.Logger()
 
@@ -58,7 +90,6 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	logger.Info("═══════════════════════════════════════════════════")
 
 	var requestData PayrollRequest
-
 	if err := json.Unmarshal([]byte(payload.Input), &requestData); err != nil {
 		logger.Error("❌ Failed to parse JSON input", "error", err)
 		return &ExecutionResult{
@@ -82,11 +113,18 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	logger.Info("🔍 VALIDATING AGAINST EMPLOYEE REGISTRY...")
 	logger.Info("─────────────────────────────────────────────────")
 
-	// Load employee registry
-	registry := GetEmployeeRegistry()
+	// Fetch registry via Confidential HTTP — no fallback, must succeed
+	registry, err := fetchEmployeeRegistry(*config, runtime)
+	if err != nil {
+		logger.Error("❌ Confidential HTTP registry fetch failed", "error", err)
+		return &ExecutionResult{
+			Result: "Error: Failed to fetch employee registry via Confidential HTTP",
+			Errors: []string{err.Error()},
+		}, nil
+	}
+
 	logger.Info(fmt.Sprintf("📋 Loaded %d authorized employees", len(registry.AuthorizedEmployees)))
 
-	// Process each record with policy enforcement
 	var payouts []PayoutResult
 	var errors []string
 	totalAmount := 0.0
@@ -94,11 +132,10 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	rejectedCount := 0
 
 	for i, record := range requestData.Records {
-		logger.Info(fmt.Sprintf("\n� Record %d/%d", i+1, len(requestData.Records)))
+		logger.Info(fmt.Sprintf("\n📄 Record %d/%d", i+1, len(requestData.Records)))
 		logger.Info(fmt.Sprintf("   Address: %s", record.EmployeeID))
 		logger.Info(fmt.Sprintf("   Amount: %.2f SCLO", record.Amount))
 
-		// Validate against employee registry
 		employee, authorized := validateEmployee(record.EmployeeID, record.Amount, registry, logger)
 
 		payout := PayoutResult{
@@ -107,7 +144,7 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 		}
 
 		if !authorized {
-			logger.Error(fmt.Sprintf("   ❌ REJECTED: Unauthorized employee or amount exceeds limit"))
+			logger.Error("   ❌ REJECTED: Unauthorized employee or amount exceeds limit")
 			payout.Status = "rejected"
 			payout.Message = "POLICY VIOLATION: Employee not authorized or amount exceeds limit"
 			errors = append(errors, fmt.Sprintf("Unauthorized: %s", record.EmployeeID))
@@ -136,11 +173,11 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 
 	var result string
 	if rejectedCount > 0 {
-		result = fmt.Sprintf("⚠️  Batch %s: %d authorized, %d REJECTED due to policy violations", 
+		result = fmt.Sprintf("⚠️  Batch %s: %d authorized, %d REJECTED due to policy violations",
 			requestData.BatchID, successCount, rejectedCount)
 		logger.Error(result)
 	} else {
-		result = fmt.Sprintf("✅ Batch %s: All %d transfers authorized, Total: %.2f SCLO", 
+		result = fmt.Sprintf("✅ Batch %s: All %d transfers authorized, Total: %.2f SCLO",
 			requestData.BatchID, successCount, totalAmount)
 		logger.Info(result)
 	}
@@ -155,14 +192,12 @@ func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 }
 
 func validateEmployee(wallet string, amount float64, registry EmployeeRegistry, logger *slog.Logger) (*AuthorizedEmployee, bool) {
-	// Normalize wallet address for comparison
 	walletLower := strings.ToLower(wallet)
 
 	for _, emp := range registry.AuthorizedEmployees {
 		if strings.ToLower(emp.Wallet) == walletLower {
-			// Check if amount exceeds max allowed
 			if amount > emp.MaxAmount {
-				logger.Error(fmt.Sprintf("   ⚠️  Amount %.2f exceeds max allowed %.2f for %s", 
+				logger.Error(fmt.Sprintf("   ⚠️  Amount %.2f exceeds max allowed %.2f for %s",
 					amount, emp.MaxAmount, emp.Name))
 				return nil, false
 			}

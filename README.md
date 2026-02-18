@@ -101,3 +101,4 @@ Relevant files:
 - `cre-payroll-workflow/Seclo/config.staging.json`
 - `cre-payroll-workflow/Seclo/config.production.json`
 - `backend/src/services/creService.ts`
+- `cre-payroll-workflow/confidential-http-demo/workflow.ts` (Confidential HTTP demo workflow)
