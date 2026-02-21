@@ -1,136 +1,162 @@
-import React, { useState } from "react";
-import { api } from "../services/api";
+import React, { useState } from 'react';
+import axios from 'axios';
+import './UploadForm.css';
 
-const UploadForm = () => {
-    const [file, setFile] = useState<File | null>(null);
-    const [message, setMessage] = useState("");
-    const [batchId, setBatchId] = useState<string | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [isStartingWorkflow, setIsStartingWorkflow] = useState(false);
+interface UploadFormProps {
+  onUploadStart?: () => void;
+  onUploadSuccess?: (result: any) => void;
+  onUploadError?: (error: string) => void;
+}
 
-    const handleUpload = async () => {
-        if (!file) return;
+const UploadForm: React.FC<UploadFormProps> = ({ 
+  onUploadStart, 
+  onUploadSuccess, 
+  onUploadError 
+}) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append("file", file);
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
 
-        try {
-            console.log("Uploading file...");
-            const res = await api.post("/payroll/upload", formData);
-            console.log("Upload response:", res.data);
-            setBatchId(res.data.batchId);
-            setMessage(`Uploaded! Batch ID: ${res.data.batchId}`);
-        } catch (err) {
-            console.error("Upload error:", err);
-            setMessage(`Upload failed: ${err}`);
-            setBatchId(null);
-        } finally {
-            setIsUploading(false);
-        }
-    };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.name.endsWith('.csv')) {
+        setFile(droppedFile);
+      } else {
+        onUploadError?.('Please upload a CSV file');
+      }
+    }
+  };
 
-    const handleStartWorkflow = async () => {
-        if (!batchId) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.name.endsWith('.csv')) {
+        setFile(selectedFile);
+      } else {
+        onUploadError?.('Please upload a CSV file');
+      }
+    }
+  };
 
-        setIsStartingWorkflow(true);
-        try {
-            console.log("Starting workflow for batchId:", batchId);
-            const res = await api.post("/payroll/start", { batchId });
-            console.log("Workflow response:", res.data);
-            setMessage(`Workflow completed! Result: ${JSON.stringify(res.data)}`);
-        } catch (err: any) {
-            console.error("Workflow error:", err);
-            setMessage(`Failed to start workflow: ${err.response?.data?.message || err.message}`);
-        } finally {
-            setIsStartingWorkflow(false);
-        }
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!file) {
+      onUploadError?.('Please select a file');
+      return;
+    }
 
-    return (
-        <div style={{ 
-            padding: '30px', 
-            maxWidth: '500px',
-            backgroundColor: '#F5E7C6',
-            borderRadius: '12px',
-            border: '2px solid #FA8112'
-        }}>
-            <div style={{ marginBottom: '20px' }}>
-                <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    style={{ 
-                        marginBottom: '15px', 
-                        display: 'block',
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: '2px solid #222222',
-                        backgroundColor: '#FAF3E1',
-                        color: '#222222',
-                        width: '100%'
-                    }}
-                />
-                
-                <button 
-                    onClick={handleUpload}
-                    disabled={!file || isUploading}
-                    style={{
-                        padding: '12px 24px',
-                        backgroundColor: !file || isUploading ? '#F5E7C6' : '#FA8112',
-                        color: !file || isUploading ? '#222222' : '#FAF3E1',
-                        border: '2px solid #222222',
-                        borderRadius: '8px',
-                        cursor: !file || isUploading ? 'not-allowed' : 'pointer',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        width: '100%',
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    {isUploading ? 'Uploading...' : 'Upload Payroll'}
-                </button>
+    setUploading(true);
+    onUploadStart?.();
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post('http://localhost:3001/payroll/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      onUploadSuccess?.(response.data);
+      setFile(null);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Upload failed';
+      onUploadError?.(errorMessage);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="upload-form">
+      <div 
+        className={`upload-dropzone ${dragActive ? 'drag-active' : ''} ${file ? 'has-file' : ''}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          id="file-upload"
+          accept=".csv"
+          onChange={handleFileChange}
+          className="file-input"
+        />
+        
+        {!file ? (
+          <label htmlFor="file-upload" className="upload-label">
+            <div className="upload-icon">[+]</div>
+            <div className="upload-text">
+              <span className="upload-primary">DROP CSV FILE HERE</span>
+              <span className="upload-secondary">or click to browse</span>
             </div>
+          </label>
+        ) : (
+          <div className="file-selected">
+            <div className="file-icon">[FILE]</div>
+            <div className="file-info">
+              <span className="file-name">{file.name}</span>
+              <span className="file-size">{(file.size / 1024).toFixed(2)} KB</span>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setFile(null)}
+              className="file-remove"
+            >
+              [X]
+            </button>
+          </div>
+        )}
+      </div>
 
-            {batchId && (
-                <div style={{ marginBottom: '20px' }}>
-                    <button 
-                        onClick={handleStartWorkflow}
-                        disabled={isStartingWorkflow}
-                        style={{
-                            padding: '12px 24px',
-                            backgroundColor: isStartingWorkflow ? '#F5E7C6' : '#222222',
-                            color: isStartingWorkflow ? '#222222' : '#FAF3E1',
-                            border: '2px solid #FA8112',
-                            borderRadius: '8px',
-                            cursor: isStartingWorkflow ? 'not-allowed' : 'pointer',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            width: '100%',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        {isStartingWorkflow ? 'Starting...' : 'Start Workflow'}
-                    </button>
-                </div>
-            )}
+      <button 
+        type="submit" 
+        disabled={!file || uploading}
+        className="upload-button"
+      >
+        {uploading ? (
+          <>
+            <span className="button-spinner">[-]</span>
+            PROCESSING...
+          </>
+        ) : (
+          <>
+            <span className="button-icon">[&gt;]</span>
+            EXECUTE WORKFLOW
+          </>
+        )}
+      </button>
 
-            {message && (
-                <p style={{ 
-                    padding: '15px', 
-                    backgroundColor: message.includes('failed') ? '#222222' : '#FA8112',
-                    color: message.includes('failed') ? '#FAF3E1' : '#FAF3E1',
-                    border: `2px solid ${message.includes('failed') ? '#FA8112' : '#222222'}`,
-                    borderRadius: '8px',
-                    margin: 0,
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                }}>
-                    {message}
-                </p>
-            )}
+      <div className="upload-info">
+        <div className="info-item">
+          <span className="info-label">FORMAT:</span>
+          <span className="info-value">wallet,amount,currency</span>
         </div>
-    );
+        <div className="info-item">
+          <span className="info-label">EXAMPLE:</span>
+          <span className="info-value">0xABC...,5000,SCLO</span>
+        </div>
+      </div>
+    </form>
+  );
 };
 
 export default UploadForm;

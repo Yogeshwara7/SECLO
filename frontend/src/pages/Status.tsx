@@ -1,420 +1,274 @@
-import React, { useEffect, useState } from "react";
-import { api } from "../services/api";
+import React, { useEffect, useState } from 'react';
+import { api } from '../services/api';
+import TickerBar from '../components/TickerBar';
+import './Status.css';
 
 interface PayrollBatch {
   id: string;
-  status: 'uploaded' | 'processing' | 'processed' | 'failed';
-  records: number;
-  createdAt?: string;
-  totalAmount?: number;
+  status: string;
+  createdAt: string;
+  records: PayrollRecord[];
+}
+
+interface PayrollRecord {
+  wallet: string;
+  amount: number;
+  currency?: string;
 }
 
 const Status = () => {
   const [batches, setBatches] = useState<PayrollBatch[]>([]);
-  const [selectedBatch, setSelectedBatch] = useState<PayrollBatch | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [hoveredBatch, setHoveredBatch] = useState<string | null>(null);
+  const [sessionId] = useState(() => 
+    Math.random().toString(36).substring(2, 10).toUpperCase()
+  );
+  const [selectedBatch, setSelectedBatch] = useState<PayrollBatch | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const fetchBatches = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/payroll/batches');
-        setBatches(response.data);
-      } catch (err) {
-        console.error('Failed to fetch batches:', err);
-        setError('Failed to load payroll batches');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBatches();
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'processed': return '#4CAF50';
-      case 'processing': return '#FF9800';
-      case 'uploaded': return '#2196F3';
-      case 'failed': return '#F44336';
-      default: return '#666';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'processed': return '✅';
-      case 'processing': return '⏳';
-      case 'uploaded': return '📤';
-      case 'failed': return '❌';
-      default: return '❓';
-    }
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Unknown';
-    return new Date(dateString).toLocaleString();
-  };
-
-  const handleBatchClick = async (batch: PayrollBatch) => {
-    setSelectedBatch(batch);
-    // Fetch detailed batch info from backend
+  const fetchBatches = async () => {
     try {
-      const response = await api.get(`/payroll/status?batchId=${batch.id}`);
-      // Merge the detailed info with the batch summary
-      setSelectedBatch({
-        ...batch,
-        ...response.data
-      });
-    } catch (err) {
-      console.error('Failed to fetch batch details:', err);
-      // Still show the batch summary even if detailed fetch fails
+      const response = await api.get('/payroll/batches');
+      setBatches(response.data);
+    } catch (error) {
+      console.error('Failed to fetch batches:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ 
-        padding: '40px', 
-        backgroundColor: '#FAF3E1',
-        minHeight: 'calc(100vh - 80px)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>⏳</div>
-          <h3 style={{ color: '#222222' }}>Loading payroll status...</h3>
-        </div>
-      </div>
-    );
-  }
+  const handleBatchClick = (batch: PayrollBatch) => {
+    setSelectedBatch(batch);
+    setShowModal(true);
+  };
 
-  if (error) {
-    return (
-      <div style={{ 
-        padding: '40px', 
-        backgroundColor: '#FAF3E1',
-        minHeight: 'calc(100vh - 80px)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>❌</div>
-          <h3 style={{ color: '#F44336' }}>{error}</h3>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              marginTop: '20px',
-              padding: '10px 20px',
-              backgroundColor: '#FA8112',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedBatch(null);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'status-completed';
+      case 'processing':
+        return 'status-processing';
+      case 'pending':
+        return 'status-pending';
+      case 'failed':
+        return 'status-failed';
+      default:
+        return '';
+    }
+  };
+
+  const calculateStats = () => {
+    const completed = batches.filter(b => b.status === 'completed').length;
+    const processing = batches.filter(b => b.status === 'processing').length;
+    const pending = batches.filter(b => b.status === 'pending').length;
+    const totalAmount = batches.reduce((sum, batch) => {
+      return sum + (batch.records?.reduce((s, r) => s + (r.amount || 0), 0) || 0);
+    }, 0);
+
+    return { completed, processing, pending, totalAmount };
+  };
+
+  const stats = calculateStats();
+  
+  const getPercentage = (value: number) => {
+    if (batches.length === 0) return 0;
+    return (value / batches.length) * 100;
+  };
 
   return (
-    <div style={{ 
-      padding: '40px', 
-      backgroundColor: '#FAF3E1',
-      minHeight: 'calc(100vh - 80px)'
-    }}>
-      <h3 style={{ 
-        fontSize: '28px', 
-        color: '#222222', 
-        marginBottom: '30px',
-        textAlign: 'center'
-      }}>
-        📊 Payroll Status Dashboard
-      </h3>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: selectedBatch ? '1fr 1fr' : '1fr',
-        gap: '30px',
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        {/* Batch List */}
-        <div style={{
-          backgroundColor: '#F5E7C6',
-          borderRadius: '12px',
-          border: '2px solid #FA8112',
-          padding: '20px'
-        }}>
-          <h4 style={{ 
-            color: '#222222', 
-            marginBottom: '20px',
-            fontSize: '20px'
-          }}>
-            📋 Recent Payroll Batches
-          </h4>
-
-          {batches.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px',
-              color: '#666'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>📭</div>
-              <p>No payroll batches found</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {batches.map((batch) => (
-                <div
-                  key={batch.id}
-                  onClick={() => handleBatchClick(batch)}
-                  onMouseEnter={() => setHoveredBatch(batch.id)}
-                  onMouseLeave={() => setHoveredBatch(null)}
-                  style={{
-                    padding: '15px',
-                    backgroundColor: hoveredBatch === batch.id ? '#F0E6D2' : '#FAF3E1',
-                    border: `2px solid ${selectedBatch?.id === batch.id ? '#FA8112' : '#222222'}`,
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '10px'
-                  }}>
-                    <div style={{ 
-                      fontWeight: 'bold',
-                      color: '#222222',
-                      fontSize: '16px'
-                    }}>
-                      {batch.id}
-                    </div>
-                    <div style={{ 
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      color: getStatusColor(batch.status),
-                      fontWeight: 'bold'
-                    }}>
-                      {getStatusIcon(batch.status)} {batch.status.toUpperCase()}
-                    </div>
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '10px',
-                    fontSize: '14px',
-                    color: '#666'
-                  }}>
-                    <div>👥 {batch.records} employees</div>
-                    <div>💰 {batch.totalAmount?.toLocaleString()} SCLO</div>
-                  </div>
-                  
-                  <div style={{ 
-                    fontSize: '12px',
-                    color: '#888',
-                    marginTop: '8px'
-                  }}>
-                    📅 {formatDate(batch.createdAt)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+    <>
+      <TickerBar 
+        enclaveStatus="active" 
+        chainId={40875} 
+        sessionId={sessionId}
+      />
+      
+      <div className="status-container">
+        <div className="status-header">
+          <h1 className="status-title">BATCH_STATUS_MONITOR</h1>
+          <span className="status-subtitle">REAL-TIME PAYROLL TRACKING</span>
         </div>
 
-        {/* Batch Details */}
-        {selectedBatch && (
-          <div style={{
-            backgroundColor: '#F5E7C6',
-            borderRadius: '12px',
-            border: '2px solid #FA8112',
-            padding: '20px'
-          }}>
-            <h4 style={{ 
-              color: '#222222', 
-              marginBottom: '20px',
-              fontSize: '20px'
-            }}>
-              🔍 Batch Details
-            </h4>
-
-            <div style={{ 
-              backgroundColor: '#FAF3E1',
-              padding: '20px',
-              borderRadius: '8px',
-              border: '2px solid #222222'
-            }}>
-              <div style={{ 
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px'
-              }}>
-                <h5 style={{ 
-                  color: '#222222',
-                  margin: 0,
-                  fontSize: '18px'
-                }}>
-                  {selectedBatch.id}
-                </h5>
-                <div style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: getStatusColor(selectedBatch.status),
-                  fontWeight: 'bold',
-                  fontSize: '16px'
-                }}>
-                  {getStatusIcon(selectedBatch.status)} {selectedBatch.status.toUpperCase()}
-                </div>
-              </div>
-
-              <div style={{ 
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '15px',
-                marginBottom: '20px'
-              }}>
-                <div>
-                  <strong>👥 Employees:</strong>
-                  <div style={{ fontSize: '24px', color: '#FA8112', fontWeight: 'bold' }}>
-                    {selectedBatch.records}
-                  </div>
-                </div>
-                <div>
-                  <strong>💰 Total Amount:</strong>
-                  <div style={{ fontSize: '24px', color: '#FA8112', fontWeight: 'bold' }}>
-                    {selectedBatch.totalAmount?.toLocaleString()} SCLO
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <strong>📅 Created:</strong>
-                <div style={{ color: '#666', marginTop: '5px' }}>
-                  {formatDate(selectedBatch.createdAt)}
-                </div>
-              </div>
-
-              {selectedBatch.status === 'processing' && (
-                <div style={{ 
-                  backgroundColor: '#FFF3CD',
-                  border: '2px solid #FF9800',
-                  borderRadius: '6px',
-                  padding: '15px',
-                  marginTop: '15px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ fontSize: '20px' }}>⏳</div>
-                    <div>
-                      <strong>Processing in progress...</strong>
-                      <div style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
-                        CRE workflow is validating and executing transfers
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedBatch.status === 'processed' && (
-                <div style={{ 
-                  backgroundColor: '#D4EDDA',
-                  border: '2px solid #4CAF50',
-                  borderRadius: '6px',
-                  padding: '15px',
-                  marginTop: '15px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ fontSize: '20px' }}>✅</div>
-                    <div>
-                      <strong>Successfully processed!</strong>
-                      <div style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
-                        All transfers completed and validated by CRE
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-label">COMPLETED</div>
+            <div className="stat-value text-green">{stats.completed}</div>
+            <div className="stat-bar">
+              <div className="stat-bar-fill green" style={{ width: `${getPercentage(stats.completed)}%` }}></div>
             </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-label">PROCESSING</div>
+            <div className="stat-value text-yellow">{stats.processing}</div>
+            <div className="stat-bar">
+              <div className="stat-bar-fill yellow" style={{ width: `${getPercentage(stats.processing)}%` }}></div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-label">PENDING</div>
+            <div className="stat-value text-cyan">{stats.pending}</div>
+            <div className="stat-bar">
+              <div className="stat-bar-fill cyan" style={{ width: `${getPercentage(stats.pending)}%` }}></div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-label">TOTAL_SCLO</div>
+            <div className="stat-value text-cyan">{stats.totalAmount.toFixed(2)}</div>
+            <div className="stat-bar">
+              <div className="stat-bar-fill cyan" style={{ width: '100%' }}></div>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="loading-container">
+            <span className="loading-spinner">[-]</span>
+            <span className="loading-text">LOADING_BATCHES...</span>
+          </div>
+        ) : batches.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">[!]</div>
+            <div className="empty-text">NO_BATCHES_FOUND</div>
+            <div className="empty-subtext">Upload a payroll CSV to get started</div>
+          </div>
+        ) : (
+          <div className="batches-grid">
+            {batches.map((batch) => (
+              <div key={batch.id} className="batch-card">
+                <div className="batch-header">
+                  <div className="batch-id">
+                    <span className="batch-label">BATCH_ID:</span>
+                    <span className="batch-value">{batch.id}</span>
+                  </div>
+                  <div className={`batch-status ${getStatusColor(batch.status)}`}>
+                    [{batch.status.toUpperCase()}]
+                  </div>
+                </div>
+
+                <div className="batch-details">
+                  <div className="batch-detail-item">
+                    <span className="detail-label">CREATED:</span>
+                    <span className="detail-value">
+                      {new Date(batch.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="batch-detail-item">
+                    <span className="detail-label">RECORDS:</span>
+                    <span className="detail-value text-cyan">
+                      {batch.records?.length || 0}
+                    </span>
+                  </div>
+
+                  <div className="batch-detail-item">
+                    <span className="detail-label">AMOUNT:</span>
+                    <span className="detail-value text-green">
+                      {batch.records?.reduce((sum, r) => sum + (r.amount || 0), 0).toFixed(2)} SCLO
+                    </span>
+                  </div>
+                </div>
+
+                <button 
+                  className="batch-details-btn"
+                  onClick={() => handleBatchClick(batch)}
+                >
+                  [VIEW DETAILS]
+                </button>
+
+                {batch.records && batch.records.length > 0 && (
+                  <div className="batch-records">
+                    <div className="records-header">TRANSACTION_LOG:</div>
+                    <div className="records-list">
+                      {batch.records.slice(0, 3).map((record, idx) => (
+                        <div key={idx} className="record-item">
+                          <span className="record-address">{record.wallet?.substring(0, 10)}...</span>
+                          <span className="record-amount text-cyan">{record.amount} SCLO</span>
+                        </div>
+                      ))}
+                      {batch.records.length > 3 && (
+                        <div className="record-item text-muted">
+                          +{batch.records.length - 3} more...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Summary Stats */}
-      <div style={{ 
-        marginTop: '40px',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '20px',
-        maxWidth: '1200px',
-        margin: '40px auto 0'
-      }}>
-        <div style={{
-          backgroundColor: '#E8F5E8',
-          border: '2px solid #4CAF50',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', color: '#4CAF50', fontWeight: 'bold' }}>
-            {batches.filter(b => b.status === 'processed').length}
-          </div>
-          <div style={{ color: '#222222', fontWeight: 'bold' }}>Completed</div>
-        </div>
+      {/* Modal for batch details */}
+      {showModal && selectedBatch && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">BATCH DETAILS</h2>
+              <button className="modal-close" onClick={closeModal}>[X]</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="modal-info">
+                <div className="modal-info-item">
+                  <span className="modal-label">BATCH_ID:</span>
+                  <span className="modal-value">{selectedBatch.id}</span>
+                </div>
+                <div className="modal-info-item">
+                  <span className="modal-label">STATUS:</span>
+                  <span className={`modal-value ${getStatusColor(selectedBatch.status)}`}>
+                    [{selectedBatch.status.toUpperCase()}]
+                  </span>
+                </div>
+                <div className="modal-info-item">
+                  <span className="modal-label">CREATED:</span>
+                  <span className="modal-value">{new Date(selectedBatch.createdAt).toLocaleString()}</span>
+                </div>
+              </div>
 
-        <div style={{
-          backgroundColor: '#FFF3CD',
-          border: '2px solid #FF9800',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', color: '#FF9800', fontWeight: 'bold' }}>
-            {batches.filter(b => b.status === 'processing').length}
+              <div className="modal-terminal">
+                <div className="terminal-header">VALIDATION RESULTS:</div>
+                {selectedBatch.records && selectedBatch.records.length > 0 ? (
+                  selectedBatch.records.map((record: any, idx: number) => (
+                    <div key={idx} className="terminal-record">
+                      <div className="terminal-line">
+                        <span className="terminal-label">Record {idx + 1}/{selectedBatch.records.length}</span>
+                      </div>
+                      <div className="terminal-line">
+                        <span className="terminal-text">   Address: {record.wallet}</span>
+                      </div>
+                      <div className="terminal-line">
+                        <span className="terminal-text">   Amount: {record.amount} SCLO</span>
+                      </div>
+                      <div className="terminal-line">
+                        <span className={`terminal-status ${record.validation_status === 'authorized' ? 'text-green' : record.validation_status === 'rejected' ? 'text-red' : 'text-yellow'}`}>
+                          {record.validation_status === 'authorized' && '   AUTHORIZED'}
+                          {record.validation_status === 'rejected' && `   REJECTED: ${record.rejection_reason || 'Unauthorized'}`}
+                          {record.validation_status === 'pending' && '   PENDING VALIDATION'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="terminal-empty">No records found</div>
+                )}
+              </div>
+            </div>
           </div>
-          <div style={{ color: '#222222', fontWeight: 'bold' }}>Processing</div>
         </div>
-
-        <div style={{
-          backgroundColor: '#E3F2FD',
-          border: '2px solid #2196F3',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', color: '#2196F3', fontWeight: 'bold' }}>
-            {batches.filter(b => b.status === 'uploaded').length}
-          </div>
-          <div style={{ color: '#222222', fontWeight: 'bold' }}>Pending</div>
-        </div>
-
-        <div style={{
-          backgroundColor: '#F5E7C6',
-          border: '2px solid #FA8112',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', color: '#FA8112', fontWeight: 'bold' }}>
-            {batches.reduce((sum, b) => sum + (b.totalAmount || 0), 0).toLocaleString()}
-          </div>
-          <div style={{ color: '#222222', fontWeight: 'bold' }}>Total SCLO</div>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 

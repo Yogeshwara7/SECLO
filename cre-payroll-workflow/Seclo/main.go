@@ -57,7 +57,6 @@ func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.Secre
 }
 
 // fetchEmployeeRegistry retrieves the employee registry via Confidential HTTP
-// This ensures employee data is fetched securely from an external API
 func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry, error) {
 	logger := runtime.Logger()
 	logger.Info("Fetching employee registry via Confidential HTTP")
@@ -67,14 +66,6 @@ func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry
 		Request: &confidentialhttp.HTTPRequest{
 			Url:    config.EmployeeRegistryPath,
 			Method: "GET",
-			MultiHeaders: map[string]*confidentialhttp.HeaderValues{
-				"Authorization": {
-					Values: []string{"Basic {{.myApiKey}}"},
-				},
-			},
-		},
-		VaultDonSecrets: []*confidentialhttp.SecretIdentifier{
-			{Key: "myApiKey"},
 		},
 	}).Await()
 	if err != nil {
@@ -90,7 +81,6 @@ func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry
 }
 
 // onHttpTrigger handles incoming HTTP payroll requests
-// Validates employees against registry and enforces payment limits
 func onHttpTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (*ExecutionResult, error) {
 	logger := runtime.Logger()
 

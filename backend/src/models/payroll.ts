@@ -7,6 +7,6 @@ export interface PayrollRecord{
 export interface PayrollBatch{
     id:string;
     records:PayrollRecord[];
-    status:"uploaded"| "processing" | "processed" | "failed";
+    status:"pending" | "processing" | "completed" | "failed";
     createdAt?: string;
 }

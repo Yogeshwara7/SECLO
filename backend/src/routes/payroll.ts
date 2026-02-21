@@ -3,6 +3,7 @@ import { upload } from "../utils/upload";
 import { parseCSV } from "../services/csvService";
 import { createBatch, getBatch, updateStatus, getAllBatches } from "../services/payrollService";
 import { processPrivatePayout } from "../services/payrollService";
+import db from "../db/database";
 
 const router = Router();
 
@@ -33,22 +34,28 @@ router.post("/start", async (req, res) => {
 
   console.log("Start endpoint hit with batchId:", batchId);
 
+  if (!batchId) {
+    return res.status(400).json({ 
+      message: "Missing batchId in request body" 
+    });
+  }
+
   try {
     const result = await processPrivatePayout(batchId);
 
-    console.log("CRE execution finished:", result);
+    console.log("CRE execution finished successfully");
 
     res.json({
       message: "CRE Workflow executed successfully",
       ...result
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("CRE execution error:", err);
 
     res.status(500).json({
       message: "CRE execution failed",
-      error: String(err)
+      error: err.message || String(err)
     });
   }
 });
@@ -72,17 +79,44 @@ router.get("/status", (req, res) => {
 
 // New endpoint to get all batches for Status dashboard
 router.get("/batches", (req, res) => {
-  const allBatches = getAllBatches();
-  
-  const batchSummaries = allBatches.map(batch => ({
-    id: batch.id,
-    status: batch.status,
-    records: batch.records.length,
-    createdAt: batch.createdAt || new Date().toISOString(),
-    totalAmount: batch.records.reduce((sum, record) => sum + record.amount, 0)
-  }));
+  try {
+    const allBatches = getAllBatches();
+    
+    const batchSummaries = allBatches.map(batch => {
+      // Try to get authorized and rejected counts from database
+      // Handle case where columns don't exist in older databases
+      let authorized_count = 0;
+      let rejected_count = 0;
+      
+      try {
+        const batchData = db.prepare(`
+          SELECT authorized_count, rejected_count 
+          FROM payroll_batches 
+          WHERE id = ?
+        `).get(batch.id) as { authorized_count: number; rejected_count: number } | undefined;
+        
+        authorized_count = batchData?.authorized_count || 0;
+        rejected_count = batchData?.rejected_count || 0;
+      } catch (err) {
+        // Columns don't exist yet, use defaults
+        console.log('authorized_count/rejected_count columns not found, using defaults');
+      }
+      
+      return {
+        id: batch.id,
+        status: batch.status,
+        records: batch.records,
+        createdAt: batch.createdAt || new Date().toISOString(),
+        authorized_count,
+        rejected_count
+      };
+    });
 
-  res.json(batchSummaries);
+    res.json(batchSummaries);
+  } catch (error) {
+    console.error('Error fetching batches:', error);
+    res.status(500).json({ message: 'Failed to fetch batches', error: String(error) });
+  }
 });
 
 export default router;

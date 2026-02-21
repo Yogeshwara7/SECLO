@@ -1,0 +1,125 @@
+.terminal-container {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-glow);
+}
+
+.terminal-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-accent);
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.terminal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent-cyan);
+}
+
+.terminal-icon {
+  color: var(--accent-green);
+  font-size: 14px;
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.terminal-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--accent-yellow);
+  font-weight: 600;
+}
+
+.terminal-body {
+  flex: 1;
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.terminal-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-muted);
+}
+
+.terminal-line {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: 2px;
+  padding: 2px 0;
+}
+
+.terminal-timestamp {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.terminal-message {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.terminal-line-info .terminal-message {
+  color: var(--text-primary);
+}
+
+.terminal-line-success .terminal-message {
+  color: var(--success);
+}
+
+.terminal-line-error .terminal-message {
+  color: var(--error);
+}
+
+.terminal-line-warning .terminal-message {
+  color: var(--warning);
+}
+
+.terminal-line-system .terminal-message {
+  color: var(--accent-cyan);
+}
+
+.terminal-cursor {
+  color: var(--accent-green);
+  font-weight: 700;
+}
+
+/* Scrollbar for terminal */
+.terminal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-body::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan);
+  border-radius: 3px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green);
+}

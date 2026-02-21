@@ -1,46 +1,43 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import './Navbar.css';
 
 const Navbar = () => {
-    const location = useLocation();
+  const location = useLocation();
 
-    const navStyle = {
-        padding: "20px",
-        background: "#222222",
-        color: "#FAF3E1",
-        borderBottom: "3px solid #FA8112",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-    };
+  const isActive = (path: string) => {
+    return location.pathname === path ? 'active' : '';
+  };
 
-    const linkStyle = (isActive: boolean) => ({
-        color: isActive ? "#FA8112" : "#FAF3E1",
-        textDecoration: "none",
-        margin: "0 15px",
-        padding: "8px 16px",
-        borderRadius: "6px",
-        border: isActive ? "2px solid #FA8112" : "2px solid transparent",
-        transition: "all 0.2s ease",
-        fontWeight: "bold"
-    });
+  return (
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand">
+        <span className="brand-icon">[S]</span>
+        <span className="brand-text">
+          SECLO
+          <span className="brand-subtitle">SECURE PAYROLL</span>
+        </span>
+      </Link>
 
-    return (
-        <div style={navStyle}>
-            <h2 style={{ margin: 0, fontSize: "24px" }}>SECLŌ Dashboard</h2>
-            <nav>
-                <Link to="/" style={linkStyle(location.pathname === "/")}>
-                     Dashboard
-                </Link>
-                <Link to="/status" style={linkStyle(location.pathname === "/status")}>
-                    Status
-                </Link>
-                <Link to="/ai" style={linkStyle(location.pathname === "/ai")}>
-                    AI Assistant
-                </Link>
-            </nav>
-        </div>
-    );
+      <ul className="navbar-nav">
+        <li>
+          <Link to="/" className={`nav-link ${isActive('/')}`}>
+            PAYROLL_TERMINAL
+          </Link>
+        </li>
+        <li>
+          <Link to="/status" className={`nav-link ${isActive('/status')}`}>
+            STATUS
+          </Link>
+        </li>
+        <li>
+          <Link to="/ai" className={`nav-link ${isActive('/ai')}`}>
+            AI_ASSISTANT
+          </Link>
+        </li>
+      </ul>
+    </nav>
+  );
 };
 
 export default Navbar;
