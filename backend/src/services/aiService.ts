@@ -128,7 +128,7 @@ JSON response:`;
 
       const text = result.response.text();
 
-      console.log("🤖 Raw Gemini response:", text);
+      console.log("Raw Gemini response:", text);
 
       // Extract JSON safely
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -244,9 +244,9 @@ JSON response:`;
     batches: PayrollBatch[]
   ): Promise<PayrollAnalytics> {
 
-    // FIX: Add null/undefined checks for batches
+    // Validate batches array input
     if (!batches || !Array.isArray(batches)) {
-      console.warn("⚠️ Invalid batches array provided to generatePayrollAnalytics");
+      console.warn("Invalid batches array provided to generatePayrollAnalytics");
       return {
         totalAmount: 0,
         employeeCount: 0,
@@ -257,11 +257,12 @@ JSON response:`;
       };
     }
 
+    // Calculate total amount across all batches
     const totalAmount = batches.reduce(
       (sum, batch) => {
-        // FIX: Check if batch.records exists and is an array
+        // Validate batch.records exists and is an array
         if (!batch?.records || !Array.isArray(batch.records)) {
-          console.warn("⚠️ Batch missing records array:", batch);
+          console.warn("Batch missing records array:", batch);
           return sum;
         }
         return sum + batch.records.reduce(
@@ -272,9 +273,10 @@ JSON response:`;
       0
     );
 
+    // Extract unique employee wallets across all batches
     const uniqueEmployees = new Set(
       batches.flatMap(batch => {
-        // FIX: Check if batch.records exists and is an array
+        // Validate batch.records exists and is an array
         if (!batch?.records || !Array.isArray(batch.records)) {
           return [];
         }
@@ -284,10 +286,11 @@ JSON response:`;
       })
     );
 
+    // Calculate department-wise spending breakdown
     const departmentBreakdown: Record<string, number> = {};
 
     batches.forEach(batch => {
-      // FIX: Check if batch.records exists and is an array
+      // Validate batch.records exists and is an array
       if (!batch?.records || !Array.isArray(batch.records)) {
         return;
       }
@@ -297,6 +300,7 @@ JSON response:`;
           return;
         }
 
+        // Match record to employee in registry
         const employee = employeeRegistry.find(
           emp =>
             emp.wallet.toLowerCase() ===

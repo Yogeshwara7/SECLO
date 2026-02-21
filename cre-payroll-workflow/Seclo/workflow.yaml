@@ -167,7 +167,7 @@ staging-settings:
       url: https://ethereum-sepolia-rpc.publicnode.com
   experimental-chains:
     - chain-selector: 40875
-      rpc-url: "https://0xrpc.io/hoodi"
+      rpc-url: "https://hoodi.gateway.tenderly.co/4fDA7Gwm1ysQLJfnh43We1"
       forwarder: "0x0000000000000000000000000000000000000000"
 
 production-settings:

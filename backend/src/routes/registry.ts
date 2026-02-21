@@ -2,7 +2,10 @@ import { Router } from 'express';
 
 const router = Router();
 
-// Employee registry data
+/**
+ * Employee registry containing authorized employees and their payment limits
+ * This data is fetched by the CRE workflow via Confidential HTTP
+ */
 const employeeRegistry = {
   authorizedEmployees: [
     {
@@ -38,7 +41,12 @@ const employeeRegistry = {
   ]
 };
 
-// GET /registry/employees - Returns employee registry for CRE workflow
+/**
+ * GET /registry/employees
+ * Returns the employee registry for CRE workflow validation
+ * This endpoint is called by the CRE workflow using Confidential HTTP
+ * to fetch authorized employees and their payment limits
+ */
 router.get('/employees', (req, res) => {
   res.json(employeeRegistry);
 });

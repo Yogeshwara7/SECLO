@@ -1,104 +1,227 @@
-# SECLO Dashboard
+# SECLO - Blockchain Payroll Management System
 
-A full-stack application for payroll management and status monitoring.
+A blockchain-based payroll system leveraging Chainlink CRE for secure employee data management and automated payment processing.
 
-## Hackathon track alignment (honest assessment)
+## Overview
 
-### CRE & AI ✅ (implemented end-to-end)
-- **AI agent / LLM**: Backend calls Gemini and produces structured payroll instructions.
-- **CRE orchestration**: Backend triggers a CRE workflow simulation which performs EVM token transfers.
+SECLO integrates Chainlink Compute Runtime Environment (CRE) with AI-powered payroll processing to create a privacy-preserving payment system. The platform uses Confidential HTTP to fetch employee data securely, validates payments against policy rules, and executes transfers on the Hoodi blockchain network.
 
-Key files:
-- `backend/src/services/aiService.ts` (Gemini → structured payroll JSON)
-- `backend/src/routes/ai.ts` (turns AI output into a payroll batch + triggers CRE execution)
-- `backend/src/services/creService.ts` (calls `cre workflow simulate ...`)
-- `cre-payroll-workflow/Seclo/workflow.yaml` (CRE workflow: HTTP trigger → EVM contract calls)
+## Architecture
 
-### Risk & Compliance ⚠️ (partially implemented; needs wiring)
-- **Implemented in backend execution path**: the `/ai/query` payroll flow enforces an employee allowlist + per-employee `maxAmount` before triggering CRE. Any violation blocks execution and returns an error with details.
+The system consists of three main components:
 
-To fully claim this track:
-- (Optional) Also enforce the same rules inside `cre-payroll-workflow/Seclo/workflow.yaml` (defense-in-depth).
-- Optionally add an external API check (HR approval / sanctions) as an additional compliance signal.
+**Frontend**: React-based interface with AI chat and CSV upload capabilities
+**Backend**: Express.js API server with Gemini AI integration for natural language processing
+**CRE Workflow**: Go-based workflow using Confidential HTTP for secure employee registry access
 
-Relevant files:
-- `backend/src/data/employeeRegistry.ts` (allowlist + limits)
-- `backend/src/services/riskService.ts` (policy checks)
-- `backend/src/routes/ai.ts` (blocks non-compliant records before CRE)
+## Key Features
 
-### Privacy ❌ (not truly implemented yet)
-- There is a `MockPrivacyAdapter` in the backend, but it does not provide real privacy guarantees.
-- To claim the Privacy track, implement **Confidential HTTP** and/or **Confidential Compute** in CRE and ensure sensitive inputs/outputs are not leaked via logs or CLI args.
+- Natural language payroll processing via AI
+- Privacy-preserving employee data management using Confidential HTTP
+- Automated policy enforcement (employee authorization and payment limits)
+- Real-time transaction monitoring via Tenderly
+- Support for batch payroll processing
 
-## Project Structure
+## Technology Stack
 
-```
-├── frontend/          # React TypeScript frontend
-│   ├── src/
-│   │   ├── components/    # Reusable components
-│   │   ├── pages/         # Page components
-│   │   └── services/      # API services
-└── backend/           # Express.js TypeScript backend
-    └── src/
-```
+**Frontend**: React, TypeScript, React Router
+**Backend**: Express.js, TypeScript, Google Gemini AI, SQLite
+**Blockchain**: Chainlink CRE (Go), Hoodi Network, Tenderly RPC
+**Smart Contracts**: Solidity, ERC20
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18 or higher
+- Go 1.21 or higher
+- CRE CLI installed globally
+- Tenderly account for RPC access
+
 ### Backend Setup
 
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   npm install
-   ```
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Configure environment variables in .env
+npm run dev
+```
 
-2. Start development server (recommended):
-   ```bash
-   npm run dev
-   ```
-   This runs TypeScript directly with auto-restart on changes.
-
-3. Or for production:
-   ```bash
-   npm run build    # Compile TypeScript first
-   npm start        # Then run compiled JavaScript
-   ```
+Backend runs on http://localhost:3001
 
 ### Frontend Setup
 
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   npm install
-   ```
+```bash
+cd frontend
+npm install
+npm start
+```
 
-2. Start development server:
-   ```bash
-   npm start
-   ```
+Frontend runs on http://localhost:3000
 
-## API Endpoints
+### CRE Workflow Setup
 
-- `GET /` - Health check
-- `GET /api/health` - API health status
+```bash
+cd cre-payroll-workflow
+cp .env.example .env
+# Configure private key and RPC URL in .env
+cre workflow build Seclo
+```
 
-## Features
+Test the workflow:
+```bash
+cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@Seclo/payload.json"
+```
 
-- Dashboard with navigation
-- Payroll upload functionality
-- Status monitoring
-- Responsive design
+## Usage
 
-## Tech Stack
+### AI Interface
 
-- **Frontend**: React 19, TypeScript, React Router
-- **Backend**: Express.js, TypeScript, Node.js
-- **Development**: Nodemon, ts-node
+Navigate to the AI page and enter natural language commands:
+```
+Pay Alice 5000 SCLO
+```
 
-## Chainlink / CRE files index (submission requirement)
+The system processes the request, validates against employee registry, and returns authorization status.
 
-- `cre-payroll-workflow/Seclo/workflow.yaml`
-- `cre-payroll-workflow/Seclo/config.staging.json`
-- `cre-payroll-workflow/Seclo/config.production.json`
-- `backend/src/services/creService.ts`
-- `cre-payroll-workflow/confidential-http-demo/workflow.ts` (Confidential HTTP demo workflow)
+### CSV Upload
+
+Upload a CSV file with the following format:
+```csv
+wallet,amount,currency
+0xA1B2C3D4E5F60123456789012345678901234567,5000,SCLO
+```
+
+### CLI Simulation
+
+Create a payload file:
+```json
+{
+  "batchId": "batch-001",
+  "records": [
+    {"employeeId": "0xA1B2C3D4E5F60123456789012345678901234567", "amount": 5000}
+  ]
+}
+```
+
+Run simulation:
+```bash
+cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@payload.json"
+```
+
+## Chainlink Integration
+
+### CRE Workflow Files
+
+- `cre-payroll-workflow/Seclo/main.go` - Main workflow implementation
+- `cre-payroll-workflow/Seclo/registry.go` - Employee registry structures
+- `cre-payroll-workflow/Seclo/workflow.yaml` - Workflow configuration
+- `cre-payroll-workflow/Seclo/config.staging.json` - Staging environment config
+- `cre-payroll-workflow/Seclo/config.production.json` - Production environment config
+- `cre-payroll-workflow/secrets.yaml` - Secrets configuration
+- `cre-payroll-workflow/.env` - Environment variables
+
+### Backend Integration
+
+- `backend/src/services/creService.ts` - CRE workflow execution
+- `backend/src/routes/ai.ts` - AI and CRE integration
+- `backend/src/routes/registry.ts` - Employee registry API
+- `backend/src/services/aiService.ts` - Gemini AI service
+- `backend/src/services/riskService.ts` - Policy enforcement
+- `backend/src/services/tenderlyService.ts` - Transaction simulation
+
+### Smart Contracts
+
+- `PayrollConsumer.sol` - Payroll consumer contract
+- `cre-payroll-workflow/contracts/evm/src/abi/PayrollConsumer.abi` - Contract ABI
+
+## Confidential HTTP Implementation
+
+The workflow uses Confidential HTTP to fetch employee registry data securely:
+
+```go
+func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry, error) {
+    client := confidentialhttp.Client{}
+    resp, err := client.SendRequest(runtime, &confidentialhttp.ConfidentialHTTPRequest{
+        Request: &confidentialhttp.HTTPRequest{
+            Url:    config.EmployeeRegistryPath,
+            Method: "GET",
+            MultiHeaders: map[string]*confidentialhttp.HeaderValues{
+                "Authorization": {Values: []string{"Basic {{.myApiKey}}"}},
+            },
+        },
+        VaultDonSecrets: []*confidentialhttp.SecretIdentifier{{Key: "myApiKey"}},
+    }).Await()
+    // Validation and parsing logic
+}
+```
+
+This ensures employee data remains private and is never exposed on-chain.
+
+## Environment Configuration
+
+### Backend (.env)
+
+```env
+PORT=3001
+GEMINI_API_KEY=your_gemini_api_key
+TENDERLY_API_KEY=your_tenderly_api_key
+TENDERLY_ACCOUNT=your_account
+TENDERLY_PROJECT=your_project
+HOODI_RPC_URL=https://hoodi.gateway.tenderly.co/YOUR_KEY
+```
+
+### CRE Workflow (.env)
+
+```env
+CRE_ETH_PRIVATE_KEY=your_private_key
+CRE_TARGET=staging-settings
+MY_API_KEY_ALL=your_api_key
+HOODI_RPC_URL=https://hoodi.gateway.tenderly.co/YOUR_KEY
+```
+
+## Testing
+
+Run backend tests:
+```bash
+cd backend
+npm test
+```
+
+Test CRE workflow:
+```bash
+cd cre-payroll-workflow
+cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@Seclo/payload.json"
+```
+
+## Documentation
+
+Additional documentation is available in the `docs` folder:
+
+- `docs/TENDERLY_INTEGRATION.md` - Tenderly setup and configuration
+- `docs/DEMO_SCRIPT.md` - Demo walkthrough guide
+- `docs/CHAINLINK_INTEGRATION.md` - Detailed Chainlink integration overview
+- `docs/HACKATHON_CHECKLIST.md` - Submission requirements checklist
+
+## Network Configuration
+
+The system is configured for the Hoodi network:
+- Chain ID: 40875
+- RPC: Tenderly Gateway
+- Token: SCLO (0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626)
+
+## Security Considerations
+
+- Private keys stored in environment variables
+- API keys managed via CRE Vault secrets
+- Employee data accessed via Confidential HTTP
+- Policy enforcement at multiple layers
+
+## License
+
+MIT License
+
+## Support
+
+For issues or questions, please open an issue on the GitHub repository.
