@@ -14,9 +14,6 @@ const AIInterface = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [sessionId] = useState(() => 
-    Math.random().toString(36).substring(2, 10).toUpperCase()
-  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -79,8 +76,7 @@ const AIInterface = () => {
     <>
       <TickerBar 
         enclaveStatus="active" 
-        chainId={40875} 
-        sessionId={sessionId}
+        chainId={40875}
       />
       
       <div className="ai-container">

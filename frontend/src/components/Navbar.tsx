@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import WalletButton from './WalletButton';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -36,6 +37,10 @@ const Navbar = () => {
           </Link>
         </li>
       </ul>
+
+      <div className="navbar-wallet">
+        <WalletButton />
+      </div>
     </nav>
   );
 };

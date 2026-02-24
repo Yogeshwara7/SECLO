@@ -63,6 +63,10 @@
   color: var(--warning);
 }
 
+.text-red {
+  color: #ff0055;
+}
+
 .status-dot {
   width: 6px;
   height: 6px;

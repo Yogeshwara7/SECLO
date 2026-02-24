@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAccount } from 'wagmi';
 import axios from 'axios';
 import './UploadForm.css';
 
@@ -16,6 +17,7 @@ const UploadForm: React.FC<UploadFormProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const { address, isConnected } = useAccount();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -56,6 +58,11 @@ const UploadForm: React.FC<UploadFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isConnected || !address) {
+      onUploadError?.('Please connect your wallet first');
+      return;
+    }
+    
     if (!file) {
       onUploadError?.('Please select a file');
       return;
@@ -66,6 +73,7 @@ const UploadForm: React.FC<UploadFormProps> = ({
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('walletAddress', address);
 
     try {
       const response = await axios.post('http://localhost:3001/payroll/upload', formData, {
@@ -84,8 +92,17 @@ const UploadForm: React.FC<UploadFormProps> = ({
     }
   };
 
+  const isButtonDisabled = !file || uploading || !isConnected;
+
   return (
     <form onSubmit={handleSubmit} className="upload-form">
+      {!isConnected && (
+        <div className="wallet-warning">
+          <span className="warning-icon">[!]</span>
+          <span className="warning-text">CONNECT WALLET TO EXECUTE WORKFLOW</span>
+        </div>
+      )}
+      
       <div 
         className={`upload-dropzone ${dragActive ? 'drag-active' : ''} ${file ? 'has-file' : ''}`}
         onDragEnter={handleDrag}
@@ -129,8 +146,9 @@ const UploadForm: React.FC<UploadFormProps> = ({
 
       <button 
         type="submit" 
-        disabled={!file || uploading}
+        disabled={isButtonDisabled}
         className="upload-button"
+        title={!isConnected ? 'Connect wallet to enable' : ''}
       >
         {uploading ? (
           <>
@@ -141,6 +159,7 @@ const UploadForm: React.FC<UploadFormProps> = ({
           <>
             <span className="button-icon">[&gt;]</span>
             EXECUTE WORKFLOW
+            {!isConnected && <span className="button-lock"> [LOCKED]</span>}
           </>
         )}
       </button>

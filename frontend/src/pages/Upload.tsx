@@ -15,9 +15,6 @@ const Upload = () => {
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [workflowStatus, setWorkflowStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
-  const [sessionId] = useState(() => 
-    Math.random().toString(36).substring(2, 10).toUpperCase()
-  );
   const [stats, setStats] = useState({
     totalBatches: 0,
     authorized: 0,
@@ -185,8 +182,7 @@ const Upload = () => {
     <>
       <TickerBar 
         enclaveStatus="active" 
-        chainId={40875} 
-        sessionId={sessionId}
+        chainId={40875}
       />
       
       <div className="upload-container">

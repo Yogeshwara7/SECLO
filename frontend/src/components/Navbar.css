@@ -47,6 +47,13 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+.navbar-wallet {
+  display: flex;
+  align-items: center;
 }
 
 .nav-link {
@@ -90,6 +97,10 @@
   
   .nav-link {
     padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 10px;
+  }
+  
+  .navbar-wallet {
     font-size: 10px;
   }
 }

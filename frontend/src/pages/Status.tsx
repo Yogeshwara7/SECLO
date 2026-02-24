@@ -19,9 +19,6 @@ interface PayrollRecord {
 const Status = () => {
   const [batches, setBatches] = useState<PayrollBatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sessionId] = useState(() => 
-    Math.random().toString(36).substring(2, 10).toUpperCase()
-  );
   const [selectedBatch, setSelectedBatch] = useState<PayrollBatch | null>(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -87,8 +84,7 @@ const Status = () => {
     <>
       <TickerBar 
         enclaveStatus="active" 
-        chainId={40875} 
-        sessionId={sessionId}
+        chainId={40875}
       />
       
       <div className="status-container">

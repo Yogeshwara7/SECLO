@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import './TickerBar.css';
 
 interface TickerBarProps {
   enclaveStatus: 'active' | 'inactive' | 'loading';
   chainId: number;
-  sessionId: string;
 }
 
-const TickerBar: React.FC<TickerBarProps> = ({ enclaveStatus, chainId, sessionId }) => {
+const TickerBar: React.FC<TickerBarProps> = ({ enclaveStatus, chainId }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { address, isConnected } = useAccount();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,6 +43,10 @@ const TickerBar: React.FC<TickerBarProps> = ({ enclaveStatus, chainId, sessionId
     }
   };
 
+  const formatAddress = (addr: string) => {
+    return `${addr.substring(0, 6)}...${addr.substring(38)}`;
+  };
+
   return (
     <div className="ticker-bar">
       <div className="ticker-section">
@@ -64,8 +69,10 @@ const TickerBar: React.FC<TickerBarProps> = ({ enclaveStatus, chainId, sessionId
       <div className="ticker-divider"></div>
 
       <div className="ticker-section">
-        <span className="ticker-label">SESSION</span>
-        <span className="ticker-value text-green">{sessionId}</span>
+        <span className="ticker-label">WALLET</span>
+        <span className={`ticker-value ${isConnected ? 'text-green' : 'text-red'}`}>
+          {isConnected && address ? formatAddress(address) : 'NOT_CONNECTED'}
+        </span>
       </div>
 
       <div className="ticker-divider"></div>
