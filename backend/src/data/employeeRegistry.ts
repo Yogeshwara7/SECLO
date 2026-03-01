@@ -14,7 +14,7 @@ export const employeeRegistry: EmployeeRegistryEntry[] = [
   },
   {
     name: "Bob",
-    wallet: "0xB2C3D4E5F6012345678901234567890123456789",
+    wallet: "0xB2C3D4E5F60123456789012345678901224354AB",
     department: "Marketing",
     maxAmount: 8000,
   },

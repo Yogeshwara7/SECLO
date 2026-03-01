@@ -3,6 +3,7 @@
   "chainSelector": 40875,
   "tokenAddress": "0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626",
   "employeeRegistryPath": "./employee-registry.json",
+  "rpcUrl": "https://virtual.hoodi.eu.rpc.tenderly.co/bf548619-5cbe-41b3-b4a1-7ad47a31d3e8",
   "authorizedEmployees": [
     {
       "name": "Alice",
@@ -12,7 +13,7 @@
     },
     {
       "name": "Bob",
-      "wallet": "0xB2C3D4E5F6012345678901234567890123456789",
+      "wallet": "0xB2C3D4E5F60123456789012345678901224354AB",
       "department": "Marketing",
       "maxAmount": 8000
     },

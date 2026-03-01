@@ -31,7 +31,7 @@ staging-settings:
   
   experimental-chains:
     - chain-selector: 40875
-      rpc-url: "https://0xrpc.io/hoodi"
+      rpc-url: "https://virtual.hoodi.eu.rpc.tenderly.co/bf548619-5cbe-41b3-b4a1-7ad47a31d3e8"
       forwarder: "0x0000000000000000000000000000000000000000"
 
 # ==========================================================================

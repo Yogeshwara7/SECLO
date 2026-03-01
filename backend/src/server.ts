@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import payrollRoutes from './routes/payroll';
 import aiRoutes from './routes/ai';
 import registryRoutes from './routes/registry';
+import tenderlyRoutes from './routes/tenderly';
 
 // Initialize database (auto-creates tables on startup - critical for Render)
 import './db/init';
@@ -34,6 +35,9 @@ app.use('/ai', aiRoutes);
 
 // Registry routes (for CRE workflow)
 app.use('/registry', registryRoutes);
+
+// Tenderly simulation routes
+app.use('/tenderly', tenderlyRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

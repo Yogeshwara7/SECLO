@@ -32,6 +32,11 @@ const Navbar = () => {
           </Link>
         </li>
         <li>
+          <Link to="/tenderly" className={`nav-link ${isActive('/tenderly')}`}>
+            TENDERLY
+          </Link>
+        </li>
+        <li>
           <Link to="/ai" className={`nav-link ${isActive('/ai')}`}>
             AI_ASSISTANT
           </Link>

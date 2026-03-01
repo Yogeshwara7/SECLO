@@ -71,7 +71,7 @@ For PAYROLL requests, use this exact format:
   "data": {
     "records": [
       {"employeeId": "0xA1B2C3D4E5F60123456789012345678901234567", "amount": 5000},
-      {"employeeId": "0xB2C3D4E5F6012345678901234567890123456789", "amount": 5000}
+      {"employeeId": "0xB2C3D4E5F60123456789012345678901224354AB", "amount": 5000}
     ]
   },
   "message": "Processing payroll for Alice (5000 SCLO) and Bob (5000 SCLO)",

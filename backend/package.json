@@ -20,6 +20,7 @@
     "cors": "^2.8.6",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.4",
+    "ethers": "^6.16.0",
     "express": "^5.2.1",
     "multer": "^2.0.2",
     "uuid": "^13.0.0"
@@ -29,6 +30,8 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.0.0",
     "@types/node": "^25.2.1",
+    "@types/pbkdf2": "^3.1.2",
+    "@types/secp256k1": "^4.0.7",
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
