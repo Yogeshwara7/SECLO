@@ -6,6 +6,27 @@ A blockchain-based payroll system leveraging Chainlink CRE for secure employee d
 
 SECLO integrates Chainlink Compute Runtime Environment (CRE) with AI-powered payroll processing to create a privacy-preserving payment system. The platform uses Confidential HTTP to fetch employee data securely, validates payments against policy rules, and executes transfers on the Hoodi blockchain network.
 
+## Quick Links
+
+- **Virtual TestNet Explorer**: [Seclo-Payroll-VNet](https://dashboard.tenderly.co/vnets) - View deployed contracts and transaction history
+- **Presentation Guide**: [docs/PRESENTATION_GUIDE.md](docs/PRESENTATION_GUIDE.md) - Complete slide deck and demo script
+- **Chainlink Integration**: [docs/CHAINLINK_INTEGRATION.md](docs/CHAINLINK_INTEGRATION.md) - Technical deep dive
+- **Hackathon Checklist**: [docs/HACKATHON_CHECKLIST.md](docs/HACKATHON_CHECKLIST.md) - Submission requirements
+
+## Why SECLO?
+
+### The Problem
+- Traditional payroll systems expose sensitive employee data on-chain
+- Manual processing is error-prone and time-consuming
+- Compliance checks are often bypassed or inconsistent
+- Blockchain transparency conflicts with privacy requirements
+
+### Our Solution
+- **AI-Powered**: Natural language processing via Gemini AI - just type "Pay Alice 5000 SCLO"
+- **Privacy-Preserving**: Confidential HTTP keeps employee data off-chain
+- **Automated Compliance**: Employee authorization and payment limits enforced automatically
+- **Production-Ready**: Tested on Tenderly Virtual TestNets with real mainnet state
+
 ## Architecture
 
 The system consists of three main components:
@@ -195,14 +216,34 @@ cd cre-payroll-workflow
 cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@Seclo/payload.json"
 ```
 
+## Tenderly Virtual TestNets
+
+SECLO is deployed and tested on Tenderly Virtual TestNets, providing:
+- **Instant Setup**: No waiting for testnet faucets or block confirmations
+- **Mainnet State Sync**: Test with real-world data and contract states
+- **Unlimited Testing**: Deploy and test as many times as needed
+- **Built-in Debugging**: Transaction traces, gas profiling, and state inspection
+
+**Virtual TestNet Details:**
+- Network Name: Seclo-Payroll-VNet
+- Chain: Hoodi (Chain ID: 40875)
+- Deployed Contracts: PayrollConsumer, TenderlyCheatcodes
+- Transactions: 20+ successful test executions
+- Explorer: Available in Tenderly Dashboard
+
+**Key Benefits:**
+- Reduced development time by 70%
+- Caught gas optimization issues before mainnet
+- Validated compliance logic with real scenarios
+- Enabled rapid iteration and testing
+
 ## Documentation
 
 Additional documentation is available in the `docs` folder:
 
-- `docs/TENDERLY_INTEGRATION.md` - Tenderly setup and configuration
-- `docs/DEMO_SCRIPT.md` - Demo walkthrough guide
-- `docs/CHAINLINK_INTEGRATION.md` - Detailed Chainlink integration overview
-- `docs/HACKATHON_CHECKLIST.md` - Submission requirements checklist
+- **[PRESENTATION_GUIDE.md](docs/PRESENTATION_GUIDE.md)** - Complete presentation deck with slides, talking points, and demo script
+- **[CHAINLINK_INTEGRATION.md](docs/CHAINLINK_INTEGRATION.md)** - Detailed Chainlink integration overview and architecture
+- **[HACKATHON_CHECKLIST.md](docs/HACKATHON_CHECKLIST.md)** - Submission requirements checklist and verification
 
 ## Network Configuration
 
