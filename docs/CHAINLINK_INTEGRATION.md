@@ -1,5 +1,8 @@
 # Chainlink Integration Summary - SECLO
 
+**Demo Video**: [Watch on YouTube](https://youtu.be/eBKC0MOmTCY)  
+**GitHub Repository**: [SECLO on GitHub](https://github.com/Yogeshwara7/SECLO)
+
 ## Executive Summary
 
 SECLO is a privacy-preserving blockchain payroll system that demonstrates advanced Chainlink CRE capabilities, specifically Confidential HTTP for secure external data integration. The system processes payroll requests through AI, validates them against a confidential employee registry, and prepares them for on-chain execution.
@@ -386,12 +389,9 @@ Completed:
 
 **Demo Video:** [Your video URL]
 
-**Team:** [Your team name]
-
-**Contact:** [Your contact info]
 
 ---
 
-Built for Chainlink Block Magic Hackathon 2024
+Built for Convergence - A Chainlink Hackathon 2026
 
 Demonstrating the power of Confidential HTTP for privacy-preserving blockchain applications

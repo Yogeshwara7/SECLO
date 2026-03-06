@@ -4,7 +4,8 @@ Privacy-preserving blockchain payroll system powered by Chainlink CRE's Confiden
 
 ## Submission Links
 
-- **Demo Video**: [YouTube Link - TO BE ADDED]
+- **Demo Video**: [Watch on YouTube](https://youtu.be/eBKC0MOmTCY)
+- **GitHub Repository**: [SECLO on GitHub](https://github.com/Yogeshwara7/SECLO)
 - **Virtual TestNet Explorer**: [Seclo-Payroll-VNet](https://dashboard.tenderly.co/explorer/vnet/8f468d9e-6664-467b-b913-619125797ad0/transactions)
 - **Documentation**: [Chainlink Integration Details](docs/CHAINLINK_INTEGRATION.md)
 
@@ -157,7 +158,6 @@ HOODI_RPC_URL=https://virtual.hoodi.eu.rpc.tenderly.co/YOUR_VNET_ID
 
 - [CHAINLINK_INTEGRATION.md](docs/CHAINLINK_INTEGRATION.md) - Complete CRE integration details and privacy implementation
 - [ARCHITECTURE_MERMAID.md](docs/ARCHITECTURE_MERMAID.md) - System architecture diagrams
-- [DEMO_SCRIPT_FINAL.md](docs/DEMO_SCRIPT_FINAL.md) - Presentation script and demo commands
 
 ## License
 
