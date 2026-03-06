@@ -6,12 +6,25 @@ import { evaluatePayrollRisk } from "../services/riskService";
 
 const router = Router();
 
+// Test endpoint to verify backend is working
+router.get("/test", (req, res) => {
+  console.log("TEST ENDPOINT HIT - Backend is receiving requests!");
+  res.json({ message: "Backend AI route is working!" });
+});
+
 // Main AI endpoint - handles all AI queries
 router.post("/query", async (req, res) => {
+  console.log("=================================================");
+  console.log("AI QUERY ENDPOINT HIT");
+  console.log("=================================================");
+  
   try {
     const { query } = req.body;
+    
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
 
     if (!query) {
+      console.log("ERROR: No query provided");
       return res.status(400).json({ 
         success: false, 
         message: "Query is required" 
@@ -28,6 +41,7 @@ router.post("/query", async (req, res) => {
     if (aiResponse.type === 'payroll' && aiResponse.success && aiResponse.data) {
       try {
         console.log('Executing AI-generated payroll...');
+        console.log('AI Response data:', JSON.stringify(aiResponse.data, null, 2));
         
         // Safe access to records array - handle multiple field names
         const aiRecords = aiResponse.data.records || 
@@ -78,9 +92,13 @@ router.post("/query", async (req, res) => {
         const creResult = await processPrivatePayout(batch.id);
         console.log('CRE execution completed');
 
-        // Return combined response
+        // Calculate total amount
+        const totalAmount = approved.reduce((sum, r) => sum + r.amount, 0);
+        
+        // Return combined response with updated message and CRE output
         res.json({
           ...aiResponse,
+          message: `Processed payroll for ${approved.length} employee(s): Total ${totalAmount} SCLO`,
           data: {
             ...(aiResponse.data || {}),
             batchId: batch.id,
@@ -89,7 +107,7 @@ router.post("/query", async (req, res) => {
           execution: {
             batchId: batch.id,
             records: approved.length,
-            creResult: creResult.creResult,
+            creResult: creResult.creResult, // Include CRE stdout for frontend to parse
             status: 'completed'
           }
         });

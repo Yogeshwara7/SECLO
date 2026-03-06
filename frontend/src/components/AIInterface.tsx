@@ -43,9 +43,77 @@ const AIInterface = () => {
         query: input
       });
 
+      // Check if there's CRE execution output to display
+      let displayContent = response.data.message || JSON.stringify(response.data, null, 2);
+      
+      if (response.data.execution && response.data.execution.creResult) {
+        // Parse CRE output similar to Upload page
+        const stdout = response.data.execution.creResult;
+        const cleanOutput = stdout.replace(/\x1b\[[0-9;]*m/g, ''); // Remove ANSI codes
+        
+        // Extract the workflow result JSON
+        const jsonMatch = cleanOutput.match(/\{[\s\S]*"[Rr]esult"[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          try {
+            const workflowResult = JSON.parse(jsonMatch[0]);
+            const payouts = workflowResult.payouts || workflowResult.Payouts || [];
+            
+            let logOutput = '===================================================\n';
+            logOutput += 'CRE WORKFLOW EXECUTION\n';
+            logOutput += '===================================================\n';
+            logOutput += `Batch ID: ${response.data.execution.batchId}\n`;
+            logOutput += `Total Records: ${response.data.execution.records}\n`;
+            logOutput += '\n';
+            
+            logOutput += 'VALIDATING AGAINST EMPLOYEE REGISTRY...\n';
+            logOutput += '---------------------------------------------------\n';
+            logOutput += 'Fetching employee registry via Confidential HTTP\n';
+            logOutput += `Loaded ${payouts.length} records from registry\n`;
+            logOutput += '\n';
+            
+            let authorized = 0;
+            let rejected = 0;
+            
+            payouts.forEach((payout: any, index: number) => {
+              const employee = payout.employee || payout.Employee;
+              const amount = payout.amount || payout.Amount;
+              const status = payout.status || payout.Status;
+              const name = payout.name || payout.Name || 'Unknown';
+              const dept = payout.department || payout.Department || 'Unknown';
+              
+              logOutput += `Record ${index + 1}/${payouts.length}\n`;
+              logOutput += `Address: ${employee}\n`;
+              logOutput += `Amount: ${amount} SCLO\n`;
+              
+              if (status === 'authorized' || status === 'success') {
+                logOutput += `✓ AUTHORIZED: ${name} (${dept})\n`;
+                authorized++;
+              } else {
+                logOutput += `✗ REJECTED: ${payout.message || 'Unauthorized or exceeds limit'}\n`;
+                rejected++;
+              }
+              logOutput += '\n';
+            });
+            
+            logOutput += '===================================================\n';
+            logOutput += 'EXECUTION SUMMARY\n';
+            logOutput += '===================================================\n';
+            logOutput += `Authorized: ${authorized}\n`;
+            logOutput += `Rejected: ${rejected}\n`;
+            logOutput += `Status: ${rejected > 0 ? 'PARTIAL SUCCESS' : 'SUCCESS'}\n`;
+            logOutput += '===================================================';
+            
+            displayContent = logOutput;
+          } catch (parseError) {
+            console.error('Failed to parse CRE output:', parseError);
+          }
+        }
+      }
+
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response.data.message || JSON.stringify(response.data, null, 2),
+        content: displayContent,
         timestamp: new Date()
       };
 

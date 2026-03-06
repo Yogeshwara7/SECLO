@@ -41,10 +41,22 @@ const TenderlySimulator: React.FC = () => {
     for (let i = startIndex; i < lines.length; i++) {
       const parts = lines[i].split(',').map(p => p.trim());
       if (parts.length >= 2) {
-        employees.push(parts[0]);
-        amounts.push(parseFloat(parts[1]));
+        const wallet = parts[0];
+        const amount = parseFloat(parts[1]);
+        
+        // Validate wallet address (must start with 0x and be 42 characters)
+        if (wallet.startsWith('0x') && wallet.length === 42 && !isNaN(amount) && amount > 0) {
+          employees.push(wallet);
+          amounts.push(amount);
+        } else {
+          console.warn(`Skipping invalid row ${i}: wallet=${wallet}, amount=${amount}`);
+        }
       }
     }
+
+    console.log(`Parsed CSV: ${employees.length} valid records`);
+    console.log('Employees:', employees);
+    console.log('Amounts:', amounts);
 
     return { employees, amounts };
   };
@@ -60,10 +72,16 @@ const TenderlySimulator: React.FC = () => {
 
     // Collect from CSV if uploaded
     if (file) {
-      const text = await file.text();
-      const parsed = parseCSVData(text);
-      employeeList = parsed.employees;
-      amountList = parsed.amounts;
+      try {
+        const text = await file.text();
+        const parsed = parseCSVData(text);
+        employeeList = parsed.employees;
+        amountList = parsed.amounts;
+      } catch (error) {
+        console.error('CSV parsing error:', error);
+        alert('Failed to parse CSV file. Check console for details.');
+        return;
+      }
     }
 
     // Also collect from manual input
@@ -86,6 +104,13 @@ const TenderlySimulator: React.FC = () => {
       return;
     }
 
+    console.log('Starting simulation with:', {
+      employees: employeeList,
+      amounts: amountList,
+      tokenAddress: import.meta.env.VITE_SCLO_TOKEN_ADDRESS || '0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626',
+      consumerAddress: import.meta.env.VITE_PAYROLL_CONSUMER_ADDRESS || '0x45b3a330Cd207FBc95D6190fd5145F59A363E9d8'
+    });
+
     setSimulating(true);
     setResult(null);
 
@@ -97,11 +122,14 @@ const TenderlySimulator: React.FC = () => {
         consumerAddress: import.meta.env.VITE_PAYROLL_CONSUMER_ADDRESS || '0x45b3a330Cd207FBc95D6190fd5145F59A363E9d8'
       });
 
+      console.log('Simulation response:', response.data);
       setResult(response.data);
     } catch (error: any) {
+      console.error('Simulation error:', error);
+      console.error('Error response:', error.response?.data);
       setResult({
         success: false,
-        error: error.response?.data?.message || error.message || 'Simulation failed'
+        error: error.response?.data?.error || error.response?.data?.message || error.message || 'Simulation failed'
       });
     } finally {
       setSimulating(false);

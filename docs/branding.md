@@ -1,1 +1,0 @@
-SECLŌ - Private Payroll Powered by Chainlink CRE

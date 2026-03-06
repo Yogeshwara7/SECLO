@@ -1,34 +1,99 @@
-import { exec } from "child_process";
+import { spawn } from "child_process";
 import path from "path";
+import fs from "fs";
+import os from "os";
 
 export function runCREWorkflow(batch: any): Promise<string> {
   return new Promise((resolve, reject) => {
-    // Avoid logging sensitive payroll payloads (wallets/amounts) in plaintext.
     const batchId = batch?.batchId ?? "unknown";
     const recordCount = Array.isArray(batch?.records) ? batch.records.length : 0;
-    console.log(`RUN CRE WORKFLOW CALLED (batchId=${batchId}, records=${recordCount})`);
+    
+    console.log("===================================================");
+    console.log("SECLO PAYROLL - CRE POLICY ENFORCEMENT");
+    console.log("===================================================");
+    console.log(`Initializing CRE workflow...`);
+    console.log(`Batch ID: ${batchId}`);
+    console.log(`Total Records: ${recordCount}`);
+    console.log("VALIDATING AGAINST EMPLOYEE REGISTRY...");
+    console.log("---------------------------------------------------");
 
     const creWorkflowDir = path.join(__dirname, "..", "..", "..", "cre-payroll-workflow");
     const workflowPath = path.join(creWorkflowDir, "Seclo");
     
-    // Convert batch to JSON string and escape for command line
-    const jsonPayload = JSON.stringify(batch);
-    const escapedPayload = jsonPayload.replace(/"/g, '\\"');
+    // Write payload to temporary file to avoid command-line escaping issues
+    const tempFile = path.join(os.tmpdir(), `cre-payload-${batchId}.json`);
+    const jsonPayload = JSON.stringify(batch, null, 2);
+    
+    try {
+      fs.writeFileSync(tempFile, jsonPayload, 'utf8');
+      console.log(`Payload written to temp file: ${tempFile}`);
+    } catch (writeError) {
+      console.error("Failed to write temp payload file:", writeError);
+      reject("Failed to write payload file");
+      return;
+    }
 
-    // NOTE: Use absolute workflow path (Windows-friendly) and `--target/-T` is a global flag.
-    const command = `cre -T staging-settings workflow simulate "${workflowPath}" --non-interactive --trigger-index 0 --http-payload "${escapedPayload}"`;
-    // Don't log the full command (it contains the full payload).
-    console.log("Executing CRE simulation for workflow:", workflowPath);
+    // Spawn CRE process with file reference
+    const creProcess = spawn("cre", [
+      "-T", "staging-settings",
+      "workflow", "simulate", workflowPath,
+      "--non-interactive",
+      "--trigger-index", "0",
+      "--http-payload", `@${tempFile}`
+    ], { 
+      cwd: creWorkflowDir,
+      shell: true // Required on Windows
+    });
 
-    exec(command, { cwd: creWorkflowDir }, (error, stdout, stderr) => {
-      if (error) {
-        console.error("CRE ERROR:", stderr);
-        reject(stderr);
-      } else {
-        // Keep logs small; caller can store stdout if needed.
-        console.log("CRE simulation completed");
-        resolve(stdout);
+    let stdout = "";
+    let stderr = "";
+
+    // Stream stdout to console in real-time
+    creProcess.stdout.on("data", (data) => {
+      const output = data.toString();
+      stdout += output;
+      process.stdout.write(output); // Real-time streaming to backend terminal
+    });
+
+    // Stream stderr to console in real-time
+    creProcess.stderr.on("data", (data) => {
+      const output = data.toString();
+      stderr += output;
+      process.stderr.write(output);
+    });
+
+    // Handle process completion
+    creProcess.on("close", (code) => {
+      // Clean up temp file
+      try {
+        fs.unlinkSync(tempFile);
+        console.log(`Temp file deleted: ${tempFile}`);
+      } catch (cleanupError) {
+        console.warn("Failed to delete temp file:", cleanupError);
       }
+      
+      console.log("===================================================");
+      if (code === 0) {
+        console.log("CRE workflow execution completed successfully");
+        console.log("===================================================");
+        resolve(stdout);
+      } else {
+        console.error(`CRE workflow failed with exit code ${code}`);
+        console.log("===================================================");
+        reject(stderr || `Process exited with code ${code}`);
+      }
+    });
+
+    // Handle process errors
+    creProcess.on("error", (error) => {
+      console.error("CRE ERROR:", error);
+      // Clean up temp file on error
+      try {
+        fs.unlinkSync(tempFile);
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+      reject(error.message);
     });
   });
 }

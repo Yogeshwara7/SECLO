@@ -1,1 +1,25 @@
-{"batchId":"batch-001","records":[{"employeeId":"0xA1B2C3D4E5F60123456789012345678901234567","amount":1000}]}
+{
+  "batchId": "demo-batch-mixed",
+  "records": [
+    {
+      "employeeId": "0xA1B2C3D4E5F60123456789012345678901234567",
+      "amount": 100
+    },
+    {
+      "employeeId": "0xB2C3D4E5F60123456789012345678901224354AB",
+      "amount": 200
+    },
+    {
+      "employeeId": "0xC3D4E5F6012345678901234567890123456789AB",
+      "amount": 150
+    },
+    {
+      "employeeId": "0xB2C3D4E5F601234567890123456789012243543",
+      "amount": 300
+    },
+    {
+      "employeeId": "0xD4E5F6012345678901234567890123456789ABCD",
+      "amount": 15000
+    }
+  ]
+}

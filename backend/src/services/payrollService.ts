@@ -142,6 +142,10 @@ export async function processPrivatePayout(batchId: string) {
       }))
     };
 
+    console.log('=== WORKFLOW PAYLOAD BEING SENT TO CRE ===');
+    console.log(JSON.stringify(workflowPayload, null, 2));
+    console.log('===========================================');
+
     const creResult = await runCREWorkflow(workflowPayload);
 
     console.log('=== Starting CRE result parsing ===');

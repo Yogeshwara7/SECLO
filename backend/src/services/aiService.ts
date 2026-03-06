@@ -39,7 +39,7 @@ export class AIPayrollService {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     this.model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash-lite",
       generationConfig: {
         responseMimeType: "application/json"
       }
@@ -47,6 +47,11 @@ export class AIPayrollService {
   }
 
   async processQuery(userQuery: string): Promise<AIResponse> {
+
+    console.log("=================================================");
+    console.log("AI SERVICE - processQuery CALLED");
+    console.log("Query:", userQuery);
+    console.log("=================================================");
 
     try {
 

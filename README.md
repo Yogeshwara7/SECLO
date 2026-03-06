@@ -1,165 +1,52 @@
-# SECLO - Blockchain Payroll Management System
+# SECLO - Privacy-Preserving Blockchain Payroll with Chainlink CRE
 
-A blockchain-based payroll system leveraging Chainlink CRE for secure employee data management and automated payment processing.
+Privacy-preserving blockchain payroll system powered by Chainlink CRE's Confidential HTTP, enabling secure employee data management while maintaining blockchain transparency for payments.
+
+## Submission Links
+
+- **Demo Video**: [YouTube Link - TO BE ADDED]
+- **Virtual TestNet Explorer**: [Seclo-Payroll-VNet](https://dashboard.tenderly.co/explorer/vnet/8f468d9e-6664-467b-b913-619125797ad0/transactions)
+- **Documentation**: [Chainlink Integration Details](docs/CHAINLINK_INTEGRATION.md)
 
 ## Overview
 
-SECLO integrates Chainlink Compute Runtime Environment (CRE) with AI-powered payroll processing to create a privacy-preserving payment system. The platform uses Confidential HTTP to fetch employee data securely, validates payments against policy rules, and executes transfers on the Hoodi blockchain network.
+SECLO solves the fundamental conflict between blockchain transparency and employee privacy using Chainlink CRE's Confidential HTTP. Employee data (names, departments, salary limits) is fetched from an external API in a secure compute environment and never exposed on-chain. Only authorization decisions and payment amounts are recorded on the blockchain.
 
-## Quick Links
-
-- **Virtual TestNet Explorer**: [Seclo-Payroll-VNet](https://dashboard.tenderly.co/vnets) - View deployed contracts and transaction history
-- **Presentation Guide**: [docs/PRESENTATION_GUIDE.md](docs/PRESENTATION_GUIDE.md) - Complete slide deck and demo script
-- **Chainlink Integration**: [docs/CHAINLINK_INTEGRATION.md](docs/CHAINLINK_INTEGRATION.md) - Technical deep dive
-- **Hackathon Checklist**: [docs/HACKATHON_CHECKLIST.md](docs/HACKATHON_CHECKLIST.md) - Submission requirements
-
-## Why SECLO?
-
-### The Problem
-- Traditional payroll systems expose sensitive employee data on-chain
-- Manual processing is error-prone and time-consuming
-- Compliance checks are often bypassed or inconsistent
-- Blockchain transparency conflicts with privacy requirements
-
-### Our Solution
-- **AI-Powered**: Natural language processing via Gemini AI - just type "Pay Alice 5000 SCLO"
-- **Privacy-Preserving**: Confidential HTTP keeps employee data off-chain
-- **Automated Compliance**: Employee authorization and payment limits enforced automatically
-- **Production-Ready**: Tested on Tenderly Virtual TestNets with real mainnet state
-
-## Architecture
-
-The system consists of three main components:
-
-**Frontend**: React-based interface with AI chat and CSV upload capabilities
-**Backend**: Express.js API server with Gemini AI integration for natural language processing
-**CRE Workflow**: Go-based workflow using Confidential HTTP for secure employee registry access
-
-## Key Features
-
-- Natural language payroll processing via AI
-- Privacy-preserving employee data management using Confidential HTTP
-- Automated policy enforcement (employee authorization and payment limits)
-- Real-time transaction monitoring via Tenderly
-- Support for batch payroll processing
-
-## Technology Stack
-
-**Frontend**: React, TypeScript, React Router
-**Backend**: Express.js, TypeScript, Google Gemini AI, SQLite
-**Blockchain**: Chainlink CRE (Go), Hoodi Network, Tenderly RPC
-**Smart Contracts**: Solidity, ERC20
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18 or higher
-- Go 1.21 or higher
-- CRE CLI installed globally
-- Tenderly account for RPC access
-
-### Backend Setup
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-# Configure environment variables in .env
-npm run dev
+**Architecture:**
+```
+User Input → Backend (Gemini AI) → Chainlink CRE Workflow → Confidential HTTP (Employee Registry) → Compliance Validation → Blockchain Execution (Hoodi Network)
 ```
 
-Backend runs on http://localhost:3001
+For detailed architecture diagrams, see [docs/ARCHITECTURE_MERMAID.md](docs/ARCHITECTURE_MERMAID.md)
 
-### Frontend Setup
+## Chainlink CRE Integration
 
-```bash
-cd frontend
-npm install
-npm start
-```
+### Core Workflow Files
 
-Frontend runs on http://localhost:3000
+**Primary Implementation:**
+- [`cre-payroll-workflow/Seclo/main.go`](cre-payroll-workflow/Seclo/main.go) - Main CRE workflow with Confidential HTTP
+- [`cre-payroll-workflow/Seclo/workflow.yaml`](cre-payroll-workflow/Seclo/workflow.yaml) - Workflow configuration with risk checks
+- [`cre-payroll-workflow/Seclo/registry.go`](cre-payroll-workflow/Seclo/registry.go) - Employee registry structures
 
-### CRE Workflow Setup
+**Configuration:**
+- [`cre-payroll-workflow/Seclo/config.staging.json`](cre-payroll-workflow/Seclo/config.staging.json) - Staging environment
+- [`cre-payroll-workflow/Seclo/config.production.json`](cre-payroll-workflow/Seclo/config.production.json) - Production environment
+- [`cre-payroll-workflow/secrets.yaml`](cre-payroll-workflow/secrets.yaml) - DON secrets configuration
+- [`cre-payroll-workflow/project.yaml`](cre-payroll-workflow/project.yaml) - Project metadata
 
-```bash
-cd cre-payroll-workflow
-cp .env.example .env
-# Configure private key and RPC URL in .env
-cre workflow build Seclo
-```
-
-Test the workflow:
-```bash
-cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@Seclo/payload.json"
-```
-
-## Usage
-
-### AI Interface
-
-Navigate to the AI page and enter natural language commands:
-```
-Pay Alice 5000 SCLO
-```
-
-The system processes the request, validates against employee registry, and returns authorization status.
-
-### CSV Upload
-
-Upload a CSV file with the following format:
-```csv
-wallet,amount,currency
-0xA1B2C3D4E5F60123456789012345678901234567,5000,SCLO
-```
-
-### CLI Simulation
-
-Create a payload file:
-```json
-{
-  "batchId": "batch-001",
-  "records": [
-    {"employeeId": "0xA1B2C3D4E5F60123456789012345678901234567", "amount": 5000}
-  ]
-}
-```
-
-Run simulation:
-```bash
-cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@payload.json"
-```
-
-## Chainlink Integration
-
-### CRE Workflow Files
-
-- `cre-payroll-workflow/Seclo/main.go` - Main workflow implementation
-- `cre-payroll-workflow/Seclo/registry.go` - Employee registry structures
-- `cre-payroll-workflow/Seclo/workflow.yaml` - Workflow configuration
-- `cre-payroll-workflow/Seclo/config.staging.json` - Staging environment config
-- `cre-payroll-workflow/Seclo/config.production.json` - Production environment config
-- `cre-payroll-workflow/secrets.yaml` - Secrets configuration
-- `cre-payroll-workflow/.env` - Environment variables
+**Smart Contracts:**
+- [`PayrollConsumer.sol`](PayrollConsumer.sol) - Payroll consumer contract
+- [`cre-payroll-workflow/contracts/evm/src/abi/PayrollConsumer.abi`](cre-payroll-workflow/contracts/evm/src/abi/PayrollConsumer.abi) - Contract ABI
 
 ### Backend Integration
 
-- `backend/src/services/creService.ts` - CRE workflow execution
-- `backend/src/routes/ai.ts` - AI and CRE integration
-- `backend/src/routes/registry.ts` - Employee registry API
-- `backend/src/services/aiService.ts` - Gemini AI service
-- `backend/src/services/riskService.ts` - Policy enforcement
-- `backend/src/services/tenderlyService.ts` - Transaction simulation
+- [`backend/src/services/creService.ts`](backend/src/services/creService.ts) - CRE workflow execution
+- [`backend/src/routes/ai.ts`](backend/src/routes/ai.ts) - AI + CRE integration
+- [`backend/src/routes/registry.ts`](backend/src/routes/registry.ts) - Employee registry API (Confidential HTTP target)
+- [`backend/src/services/riskService.ts`](backend/src/services/riskService.ts) - Compliance validation
+- [`backend/src/services/aiService.ts`](backend/src/services/aiService.ts) - Gemini AI service
 
-### Smart Contracts
-
-- `PayrollConsumer.sol` - Payroll consumer contract
-- `cre-payroll-workflow/contracts/evm/src/abi/PayrollConsumer.abi` - Contract ABI
-
-## Confidential HTTP Implementation
-
-The workflow uses Confidential HTTP to fetch employee registry data securely:
+### Confidential HTTP Implementation
 
 ```go
 func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry, error) {
@@ -174,95 +61,108 @@ func fetchEmployeeRegistry(config Config, runtime cre.Runtime) (EmployeeRegistry
         },
         VaultDonSecrets: []*confidentialhttp.SecretIdentifier{{Key: "myApiKey"}},
     }).Await()
-    // Validation and parsing logic
+    
+    // Employee data validated in secure environment
+    // Only authorization decisions go on-chain
 }
 ```
 
-This ensures employee data remains private and is never exposed on-chain.
+Employee PII (names, departments, limits) is fetched securely and never exposed on the blockchain. Only wallet addresses and payment amounts are recorded on-chain for ERC20 transfers.
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+, Go 1.21+
+- CRE CLI: `npm install -g @chainlink/cre-cli`
+
+### Run CRE Workflow Simulation
+
+**1. Start Backend (Employee Registry API):**
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+**2. Build and Simulate CRE Workflow:**
+```bash
+cd cre-payroll-workflow
+cre workflow build Seclo
+cre workflow simulate Seclo --non-interactive --trigger-index 0 --http-payload "@Seclo/payload.json" --target staging-settings
+```
+
+**Expected Output:**
+```json
+{
+  "batchId": "batch-001",
+  "compliance": {
+    "requested": 1,
+    "approved": 1,
+    "rejected": 0,
+    "violations": []
+  },
+  "result": "Processed batch batch-001: 1/1 successful transfers, Total: 1000 SCLO",
+  "payouts": [
+    {
+      "employee": "0xA1B2C3D4E5F60123456789012345678901234567",
+      "amount": 1000,
+      "status": "success"
+    }
+  ]
+}
+```
+
+The workflow fetches employee registry via Confidential HTTP, validates authorization and payment limits, and returns the authorization decision.
+
+## Tenderly Virtual TestNets
+
+**Network:** Seclo-Payroll-VNet  
+**Chain:** Hoodi (Chain ID: 40875)  
+**Explorer:** [View Transactions](https://dashboard.tenderly.co/explorer/vnet/8f468d9e-6664-467b-b913-619125797ad0/transactions)
+
+**Deployed Contracts:**
+- PayrollConsumer: `0xe3b9f92b0D8e553De05051D84019748E2849750e`
+- SCLO Token: `0xB4968458006519ef42a9e40E30142C0d13784e27`
+
+Virtual TestNets provided instant setup, mainnet state synchronization, and unlimited testing iterations for development and validation.
+
+## AI Integration (Optional)
+
+Natural language payroll processing via Gemini AI. Users can type "Pay Alice 5000 SCLO" and the system parses the request, looks up wallet addresses, and triggers the CRE workflow.
+
+**Start Frontend:**
+```bash
+cd frontend
+npm install && npm start
+```
 
 ## Environment Configuration
 
-### Backend (.env)
-
-```env
-PORT=3001
-GEMINI_API_KEY=your_gemini_api_key
-TENDERLY_API_KEY=your_tenderly_api_key
-TENDERLY_ACCOUNT=your_account
-TENDERLY_PROJECT=your_project
-HOODI_RPC_URL=https://hoodi.gateway.tenderly.co/YOUR_KEY
-```
-
-### CRE Workflow (.env)
-
+**CRE Workflow (.env):**
 ```env
 CRE_ETH_PRIVATE_KEY=your_private_key
 CRE_TARGET=staging-settings
 MY_API_KEY_ALL=your_api_key
-HOODI_RPC_URL=https://hoodi.gateway.tenderly.co/YOUR_KEY
+HOODI_RPC_URL=https://virtual.hoodi.eu.rpc.tenderly.co/YOUR_VNET_ID
 ```
 
-## Testing
-
-Run backend tests:
-```bash
-cd backend
-npm test
+**Backend (.env):**
+```env
+PORT=3001
+GEMINI_API_KEY=your_gemini_api_key
+HOODI_RPC_URL=https://virtual.hoodi.eu.rpc.tenderly.co/YOUR_VNET_ID
 ```
-
-Test CRE workflow:
-```bash
-cd cre-payroll-workflow
-cre workflow simulate Seclo -R . --non-interactive --trigger-index 0 --http-payload "@Seclo/payload.json"
-```
-
-## Tenderly Virtual TestNets
-
-SECLO is deployed and tested on Tenderly Virtual TestNets, providing:
-- **Instant Setup**: No waiting for testnet faucets or block confirmations
-- **Mainnet State Sync**: Test with real-world data and contract states
-- **Unlimited Testing**: Deploy and test as many times as needed
-- **Built-in Debugging**: Transaction traces, gas profiling, and state inspection
-
-**Virtual TestNet Details:**
-- Network Name: Seclo-Payroll-VNet
-- Chain: Hoodi (Chain ID: 40875)
-- Deployed Contracts: PayrollConsumer, TenderlyCheatcodes
-- Transactions: 20+ successful test executions
-- Explorer: Available in Tenderly Dashboard
-
-**Key Benefits:**
-- Reduced development time by 70%
-- Caught gas optimization issues before mainnet
-- Validated compliance logic with real scenarios
-- Enabled rapid iteration and testing
 
 ## Documentation
 
-Additional documentation is available in the `docs` folder:
-
-- **[PRESENTATION_GUIDE.md](docs/PRESENTATION_GUIDE.md)** - Complete presentation deck with slides, talking points, and demo script
-- **[CHAINLINK_INTEGRATION.md](docs/CHAINLINK_INTEGRATION.md)** - Detailed Chainlink integration overview and architecture
-- **[HACKATHON_CHECKLIST.md](docs/HACKATHON_CHECKLIST.md)** - Submission requirements checklist and verification
-
-## Network Configuration
-
-The system is configured for the Hoodi network:
-- Chain ID: 40875
-- RPC: Tenderly Gateway
-- Token: SCLO (0xD2C2f3FAA1517582a37652c6B1BFCFF147CbA626)
-
-## Security Considerations
-
-- Private keys stored in environment variables
-- API keys managed via CRE Vault secrets
-- Employee data accessed via Confidential HTTP
-- Policy enforcement at multiple layers
+- [CHAINLINK_INTEGRATION.md](docs/CHAINLINK_INTEGRATION.md) - Complete CRE integration details and privacy implementation
+- [ARCHITECTURE_MERMAID.md](docs/ARCHITECTURE_MERMAID.md) - System architecture diagrams
+- [DEMO_SCRIPT_FINAL.md](docs/DEMO_SCRIPT_FINAL.md) - Presentation script and demo commands
 
 ## License
 
 MIT License
 
-## Support
+---
 
-For issues or questions, please open an issue on the GitHub repository.
+Built for Convergence – A Chainlink Hackathon 2026

@@ -90,6 +90,9 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .message-timestamp {

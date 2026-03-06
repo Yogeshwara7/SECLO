@@ -8,24 +8,42 @@ import db from "../db/database";
 const router = Router();
 
 router.post("/upload", upload.single("file"), (req, res) => {
+  console.log("===================================================");
+  console.log("PAYROLL UPLOAD ENDPOINT HIT");
+  console.log("===================================================");
+  
   try {
     const file = req.file;
+    console.log("File received:", file ? file.originalname : "NO FILE");
+    console.log("File size:", file ? file.size : "N/A");
 
     if (!file) {
+      console.log("ERROR: No file uploaded");
       return res.status(400).json({ message: "No file uploaded" });
     }
 
+    console.log("Parsing CSV...");
     const records = parseCSV(file.buffer);
+    console.log(`Parsed ${records.length} records from CSV`);
 
+    console.log("Creating batch...");
     const batch = createBatch(records);
+    console.log(`Batch created with ID: ${batch.id}`);
 
+    console.log("===================================================");
     res.json({
       message: "Payroll uploaded successfully",
       batchId: batch.id,
       totalRecords: records.length,
     });
-  } catch (err) {
-    res.status(500).json({ message: "CSV processing failed" });
+  } catch (err: any) {
+    console.error("CSV processing error:", err);
+    console.error("Error message:", err.message);
+    console.error("===================================================");
+    res.status(500).json({ 
+      message: "CSV processing failed",
+      error: err.message || String(err)
+    });
   }
 });
 
